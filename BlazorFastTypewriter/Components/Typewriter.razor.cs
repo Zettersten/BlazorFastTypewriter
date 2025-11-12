@@ -246,6 +246,7 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
     var gen = _generation;
     _isRunning = true;
     _cancellationTokenSource?.Cancel();
+    _cancellationTokenSource?.Dispose();
     _cancellationTokenSource = new CancellationTokenSource();
     var ct = _cancellationTokenSource.Token;
 
@@ -384,7 +385,8 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
       if (_isPaused)
       {
         _currentIndex = i;
-        await Task.Delay(50, cancellationToken);
+        // Use a longer delay when paused to reduce CPU usage
+        await Task.Delay(100, cancellationToken);
         i--; // Retry same index
         continue;
       }
@@ -426,9 +428,14 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
         );
       }
 
-      var itemDelay = op.Type == OperationType.Char ? baseDelay + Random.Shared.Next(0, 6) : 0;
-
-      await Task.Delay(itemDelay, cancellationToken);
+      if (op.Type == OperationType.Char)
+      {
+        var itemDelay = baseDelay + Random.Shared.Next(0, 6);
+        if (itemDelay > 0)
+        {
+          await Task.Delay(itemDelay, cancellationToken);
+        }
+      }
     }
 
     _isRunning = false;
@@ -442,10 +449,10 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
 
   private ImmutableArray<NodeOperation> ParseDomStructure(DomStructure structure)
   {
-    var operations = new List<NodeOperation>(capacity: structure.Nodes?.Length ?? 0);
-
-    if (structure.Nodes is null)
+    if (structure.Nodes is null or { Length: 0 })
       return [];
+
+    var builder = ImmutableArray.CreateBuilder<NodeOperation>(initialCapacity: structure.Nodes.Length * 4);
 
     foreach (var node in structure.Nodes)
     {
@@ -456,20 +463,20 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
           {
             // Build opening tag with attributes
             var openTag = BuildTag(node.TagName, node.Attributes, false);
-            operations.Add(new NodeOperation(OperationType.OpenTag, TagHtml: openTag));
+            builder.Add(new NodeOperation(OperationType.OpenTag, TagHtml: openTag));
 
             // Process children recursively
             if (node.Children is not null)
             {
               foreach (var child in node.Children)
               {
-                ProcessNode(child, operations);
+                ProcessNode(child, builder);
               }
             }
 
             // Closing tag
             var closeTag = $"</{node.TagName}>";
-            operations.Add(new NodeOperation(OperationType.CloseTag, TagHtml: closeTag));
+            builder.Add(new NodeOperation(OperationType.CloseTag, TagHtml: closeTag));
           }
           break;
 
@@ -481,7 +488,7 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
             {
               foreach (var ch in normalized)
               {
-                operations.Add(new NodeOperation(OperationType.Char, Char: ch));
+                builder.Add(new NodeOperation(OperationType.Char, Char: ch));
               }
             }
           }
@@ -489,10 +496,10 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
       }
     }
 
-    return [.. operations];
+    return builder.ToImmutable();
   }
 
-  private static void ProcessNode(DomNode node, List<NodeOperation> operations)
+  private static void ProcessNode(DomNode node, ImmutableArray<NodeOperation>.Builder builder)
   {
     switch (node.Type)
     {
@@ -500,18 +507,18 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
         if (node.TagName is not null)
         {
           var openTag = BuildTag(node.TagName, node.Attributes, false);
-          operations.Add(new NodeOperation(OperationType.OpenTag, TagHtml: openTag));
+          builder.Add(new NodeOperation(OperationType.OpenTag, TagHtml: openTag));
 
           if (node.Children is not null)
           {
             foreach (var child in node.Children)
             {
-              ProcessNode(child, operations);
+              ProcessNode(child, builder);
             }
           }
 
           var closeTag = $"</{node.TagName}>";
-          operations.Add(new NodeOperation(OperationType.CloseTag, TagHtml: closeTag));
+          builder.Add(new NodeOperation(OperationType.CloseTag, TagHtml: closeTag));
         }
         break;
 
@@ -523,7 +530,7 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
           {
             foreach (var ch in normalized)
             {
-              operations.Add(new NodeOperation(OperationType.Char, Char: ch));
+              builder.Add(new NodeOperation(OperationType.Char, Char: ch));
             }
           }
         }
@@ -565,8 +572,11 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
 
   public async ValueTask DisposeAsync()
   {
+    _generation++; // Prevent any ongoing animations from continuing
+    _isRunning = false;
     _cancellationTokenSource?.Cancel();
     _cancellationTokenSource?.Dispose();
+    _cancellationTokenSource = null;
 
     if (_jsModule is not null)
     {
@@ -577,6 +587,10 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
       catch (JSDisconnectedException)
       {
         // Ignore if JS context is disconnected
+      }
+      catch (ObjectDisposedException)
+      {
+        // Ignore if already disposed
       }
     }
   }
