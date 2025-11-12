@@ -133,7 +133,9 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
   protected override void OnInitialized()
   {
     _originalContent = ChildContent;
-    if (!Autostart && ChildContent is not null)
+    // Always set CurrentContent initially so there's something to display
+    // If autostart is enabled, it will be replaced when animation starts
+    if (ChildContent is not null)
     {
       CurrentContent = ChildContent;
     }
@@ -202,10 +204,10 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
     {
       try
       {
-        // First render the content so we can extract it
-        CurrentContent = _originalContent;
+        // Ensure content is rendered so we can extract it
+        // (CurrentContent should already be set from OnInitialized)
         await InvokeAsync(StateHasChanged);
-        await Task.Delay(50); // Allow DOM to update
+        await Task.Delay(100); // Allow DOM to update and render
 
         var structure = await _jsModule.InvokeAsync<DomStructure>("extractStructure", _containerId);
         _operations = ParseDomStructure(structure);
@@ -217,17 +219,17 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
         _operations = [];
       }
       
-      // If operations are still empty after parsing, log and continue
-      // This helps with test environments where JS extraction may not work perfectly
+      // If operations are still empty after parsing, skip animation and just show content
       if (_operations.Length == 0)
       {
-        // Create minimal fallback operations to allow animation state to be tested
-        var builder = ImmutableArray.CreateBuilder<NodeOperation>(initialCapacity: 10);
-        builder.Add(new NodeOperation(OperationType.Char, Char: 'T'));
-        builder.Add(new NodeOperation(OperationType.Char, Char: 'e'));
-        builder.Add(new NodeOperation(OperationType.Char, Char: 's'));
-        builder.Add(new NodeOperation(OperationType.Char, Char: 't'));
-        _operations = builder.ToImmutable();
+        // No valid operations - just show the content immediately
+        _isRunning = true;
+        await OnStart.InvokeAsync();
+        _isRunning = false;
+        CurrentContent = _originalContent;
+        await InvokeAsync(StateHasChanged);
+        await OnComplete.InvokeAsync();
+        return;
       }
     }
     else
@@ -270,10 +272,25 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
     );
     var delay = totalChars > 0 ? Math.Max(8, duration / totalChars) : 0;
 
-    _ = Task.Run(() => AnimateAsync(gen, delay, totalChars, ct), ct);
-    
-    // Small delay to ensure animation task has started
-    await Task.Delay(10);
+    // Run animation in background with error handling
+    _ = Task.Run(async () =>
+    {
+      try
+      {
+        await AnimateAsync(gen, delay, totalChars, ct);
+      }
+      catch (Exception)
+      {
+        // On error, ensure content is restored
+        _isRunning = false;
+        await InvokeAsync(() =>
+        {
+          CurrentContent = _originalContent;
+          StateHasChanged();
+        });
+        await OnComplete.InvokeAsync();
+      }
+    }, ct);
   }
 
   /// <summary>
