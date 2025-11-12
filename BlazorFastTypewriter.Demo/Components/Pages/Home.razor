@@ -96,7 +96,7 @@
     {
         if (_typewriter is not null)
         {
-            await _typewriter.StartAsync();
+            await _typewriter.Start();
         }
     }
 
@@ -109,7 +109,7 @@
     {
         if (_typewriter is not null)
         {
-            await _typewriter.ResumeAsync();
+            await _typewriter.Resume();
         }
     }
 
@@ -117,7 +117,7 @@
     {
         if (_typewriter is not null)
         {
-            await _typewriter.CompleteAsync();
+            await _typewriter.Complete();
         }
     }
 
@@ -125,7 +125,7 @@
     {
         if (_typewriter is not null)
         {
-            await _typewriter.ResetAsync();
+            await _typewriter.Reset();
         }
     }
 
@@ -164,7 +164,7 @@
         StateHasChanged();
     }
 
-    private void HandleProgress(ProgressEventArgs args)
+    private void HandleProgress(TypewriterProgressEventArgs args)
     {
         _progressText = $"Progress: {args.Percent:F1}% ({args.Current}/{args.Total})";
         StateHasChanged();
