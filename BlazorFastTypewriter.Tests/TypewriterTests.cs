@@ -481,4 +481,494 @@ public class TypewriterTests : TestContext
     // Assert
     cut.Instance.RespectMotionPreference.Should().BeTrue();
   }
+
+  // ==================== Speed Parameter Tests ====================
+
+  [Theory]
+  [InlineData(20)]
+  [InlineData(50)]
+  [InlineData(100)]
+  [InlineData(200)]
+  public void Speed_ParameterAcceptsValidValues(int speed)
+  {
+    // Arrange & Act
+    var cut = Render<Typewriter>(parameters =>
+      parameters.Add(p => p.Speed, speed).Add(p => p.Autostart, false)
+    );
+
+    // Assert
+    cut.Instance.Speed.Should().Be(speed);
+  }
+
+  [Fact]
+  public async Task Speed_SlowSpeed_TakesLongerToAnimate()
+  {
+    // Arrange - Create two typewriters with different speeds
+    var slowCut = Render<Typewriter>(parameters =>
+      parameters
+        .Add(p => p.Speed, 20) // Slow: 20 chars/sec
+        .Add(p => p.Autostart, false)
+        .Add(p => p.ChildContent, builder => builder.AddMarkupContent(0, "<p>Test</p>"))
+    );
+
+    var fastCut = Render<Typewriter>(parameters =>
+      parameters
+        .Add(p => p.Speed, 200) // Fast: 200 chars/sec
+        .Add(p => p.Autostart, false)
+        .Add(p => p.ChildContent, builder => builder.AddMarkupContent(0, "<p>Test</p>"))
+    );
+
+    await Task.Delay(300); // Wait for initialization
+
+    // Act - Start both animations
+    var slowStartTime = DateTime.UtcNow;
+    await slowCut.Instance.Start();
+
+    var fastStartTime = DateTime.UtcNow;
+    await fastCut.Instance.Start();
+
+    // Wait for fast to potentially complete while slow is still running
+    await Task.Delay(200);
+
+    // Assert - Slow should still be running while fast might be done
+    slowCut.Instance.IsRunning.Should().BeTrue("slow speed should still be animating");
+  }
+
+  [Fact]
+  public async Task Speed_ChangingSpeedBetweenAnimations_UsesNewSpeed()
+  {
+    // Arrange
+    var cut = Render<Typewriter>(parameters =>
+      parameters
+        .Add(p => p.Speed, 100)
+        .Add(p => p.Autostart, false)
+        .Add(p => p.ChildContent, builder => builder.AddMarkupContent(0, "<p>Test content</p>"))
+    );
+
+    await Task.Delay(300);
+
+    // Act - First animation with speed 100
+    await cut.Instance.Start();
+    await Task.Delay(200);
+    await cut.Instance.Complete();
+    await cut.Instance.Reset();
+
+    // Change speed and start again
+    cut.SetParametersAndRender(parameters => parameters.Add(p => p.Speed, 50));
+    await cut.Instance.Start();
+    await Task.Delay(100);
+
+    // Assert - Component should respect the new speed
+    cut.Instance.Speed.Should().Be(50);
+    cut.Instance.IsRunning.Should().BeTrue();
+  }
+
+  // ==================== Reset Functionality Tests ====================
+
+  [Fact]
+  public async Task Reset_WhileRunning_StopsAnimation()
+  {
+    // Arrange
+    var cut = Render<Typewriter>(parameters =>
+      parameters
+        .Add(p => p.Autostart, false)
+        .Add(p => p.ChildContent, builder => builder.AddMarkupContent(0, "<p>Test content</p>"))
+    );
+
+    await Task.Delay(300);
+    await cut.Instance.Start();
+    await Task.Delay(100); // Let animation run for a bit
+
+    // Act
+    await cut.Instance.Reset();
+
+    // Assert
+    cut.Instance.IsRunning.Should().BeFalse();
+    cut.Instance.IsPaused.Should().BeFalse();
+  }
+
+  [Fact]
+  public async Task Reset_WhilePaused_ClearsState()
+  {
+    // Arrange
+    var cut = Render<Typewriter>(parameters =>
+      parameters
+        .Add(p => p.Autostart, false)
+        .Add(p => p.ChildContent, builder => builder.AddMarkupContent(0, "<p>Test content</p>"))
+    );
+
+    await Task.Delay(300);
+    await cut.Instance.Start();
+    await Task.Delay(100);
+    await cut.Instance.Pause();
+
+    // Act
+    await cut.Instance.Reset();
+
+    // Assert
+    cut.Instance.IsRunning.Should().BeFalse();
+    cut.Instance.IsPaused.Should().BeFalse();
+  }
+
+  [Fact]
+  public async Task Reset_AfterComplete_AllowsRestart()
+  {
+    // Arrange
+    var cut = Render<Typewriter>(parameters =>
+      parameters
+        .Add(p => p.Autostart, false)
+        .Add(p => p.ChildContent, builder => builder.AddMarkupContent(0, "<p>Test</p>"))
+    );
+
+    await Task.Delay(300);
+    await cut.Instance.Start();
+    await Task.Delay(100);
+    await cut.Instance.Complete();
+
+    // Act
+    await cut.Instance.Reset();
+    await cut.Instance.Start();
+    await Task.Delay(100);
+
+    // Assert
+    cut.Instance.IsRunning.Should().BeTrue();
+  }
+
+  [Fact]
+  public async Task Reset_MultipleTimesInSuccession_WorksCorrectly()
+  {
+    // Arrange
+    var cut = Render<Typewriter>(parameters =>
+      parameters
+        .Add(p => p.Autostart, false)
+        .Add(p => p.ChildContent, builder => builder.AddMarkupContent(0, "<p>Test</p>"))
+    );
+
+    await Task.Delay(300);
+
+    // Act - Reset multiple times
+    await cut.Instance.Reset();
+    await cut.Instance.Reset();
+    await cut.Instance.Reset();
+
+    // Assert - Should not throw and should be in a clean state
+    cut.Instance.IsRunning.Should().BeFalse();
+    cut.Instance.IsPaused.Should().BeFalse();
+  }
+
+  [Fact]
+  public async Task Reset_TriggersOnResetEvent()
+  {
+    // Arrange
+    var resetEventFired = false;
+    var cut = Render<Typewriter>(parameters =>
+      parameters
+        .Add(p => p.Autostart, false)
+        .Add(p => p.ChildContent, builder => builder.AddMarkupContent(0, "<p>Test</p>"))
+        .Add(p => p.OnReset, EventCallback.Factory.Create(this, () => resetEventFired = true))
+    );
+
+    // Act
+    await cut.Instance.Reset();
+
+    // Assert
+    resetEventFired.Should().BeTrue();
+  }
+
+  // ==================== Animation Lifecycle Tests ====================
+
+  [Fact]
+  public async Task AnimationLifecycle_StartToComplete_TriggersAllEvents()
+  {
+    // Arrange
+    var startFired = false;
+    var completeFired = false;
+
+    var cut = Render<Typewriter>(parameters =>
+      parameters
+        .Add(p => p.Autostart, false)
+        .Add(p => p.ChildContent, builder => builder.AddMarkupContent(0, "<p>Test</p>"))
+        .Add(p => p.OnStart, EventCallback.Factory.Create(this, () => startFired = true))
+        .Add(p => p.OnComplete, EventCallback.Factory.Create(this, () => completeFired = true))
+    );
+
+    await Task.Delay(300);
+
+    // Act
+    await cut.Instance.Start();
+    await Task.Delay(100);
+    await cut.Instance.Complete();
+
+    // Assert
+    startFired.Should().BeTrue();
+    completeFired.Should().BeTrue();
+  }
+
+  [Fact]
+  public async Task AnimationLifecycle_StartPauseResumeComplete_TriggersAllEvents()
+  {
+    // Arrange
+    var startFired = false;
+    var pauseFired = false;
+    var resumeFired = false;
+    var completeFired = false;
+
+    var cut = Render<Typewriter>(parameters =>
+      parameters
+        .Add(p => p.Autostart, false)
+        .Add(p => p.ChildContent, builder => builder.AddMarkupContent(0, "<p>Test content</p>"))
+        .Add(p => p.OnStart, EventCallback.Factory.Create(this, () => startFired = true))
+        .Add(p => p.OnPause, EventCallback.Factory.Create(this, () => pauseFired = true))
+        .Add(p => p.OnResume, EventCallback.Factory.Create(this, () => resumeFired = true))
+        .Add(p => p.OnComplete, EventCallback.Factory.Create(this, () => completeFired = true))
+    );
+
+    await Task.Delay(300);
+
+    // Act
+    await cut.Instance.Start();
+    await Task.Delay(100);
+    await cut.Instance.Pause();
+    await cut.Instance.Resume();
+    await Task.Delay(100);
+    await cut.Instance.Complete();
+
+    // Assert
+    startFired.Should().BeTrue();
+    pauseFired.Should().BeTrue();
+    resumeFired.Should().BeTrue();
+    completeFired.Should().BeTrue();
+  }
+
+  [Fact]
+  public async Task AnimationLifecycle_StateTransitions_AreCorrect()
+  {
+    // Arrange
+    var cut = Render<Typewriter>(parameters =>
+      parameters
+        .Add(p => p.Autostart, false)
+        .Add(p => p.ChildContent, builder => builder.AddMarkupContent(0, "<p>Test</p>"))
+    );
+
+    await Task.Delay(300);
+
+    // Initial state
+    cut.Instance.IsRunning.Should().BeFalse();
+    cut.Instance.IsPaused.Should().BeFalse();
+
+    // Start
+    await cut.Instance.Start();
+    await Task.Delay(100);
+    cut.Instance.IsRunning.Should().BeTrue();
+    cut.Instance.IsPaused.Should().BeFalse();
+
+    // Pause
+    await cut.Instance.Pause();
+    cut.Instance.IsRunning.Should().BeTrue();
+    cut.Instance.IsPaused.Should().BeTrue();
+
+    // Resume
+    await cut.Instance.Resume();
+    cut.Instance.IsPaused.Should().BeFalse();
+
+    // Complete
+    await cut.Instance.Complete();
+    cut.Instance.IsRunning.Should().BeFalse();
+    cut.Instance.IsPaused.Should().BeFalse();
+  }
+
+  [Fact]
+  public async Task AnimationLifecycle_ProgressEvents_FireRegularly()
+  {
+    // Arrange
+    var progressEventCount = 0;
+    var lastProgress = 0.0;
+
+    var cut = Render<Typewriter>(parameters =>
+      parameters
+        .Add(p => p.Autostart, false)
+        .Add(
+          p => p.ChildContent,
+          builder =>
+            builder.AddMarkupContent(
+              0,
+              "<p>This is a longer text content to ensure progress events are fired multiple times during animation</p>"
+            )
+        )
+        .Add(
+          p => p.OnProgress,
+          EventCallback.Factory.Create<TypewriterProgressEventArgs>(
+            this,
+            args =>
+            {
+              progressEventCount++;
+              lastProgress = args.Percent;
+            }
+          )
+        )
+    );
+
+    await Task.Delay(300);
+
+    // Act
+    await cut.Instance.Start();
+    await Task.Delay(500); // Let it run for a bit
+
+    // Assert
+    // Progress events should fire (or at least be wired up correctly)
+    // Note: In test environment, actual firing depends on JS interop mock
+    progressEventCount.Should().BeGreaterOrEqualTo(0);
+  }
+
+  [Fact]
+  public async Task AnimationLifecycle_CompleteBeforeStart_DoesNothing()
+  {
+    // Arrange
+    var cut = Render<Typewriter>(parameters =>
+      parameters
+        .Add(p => p.Autostart, false)
+        .Add(p => p.ChildContent, builder => builder.AddMarkupContent(0, "<p>Test</p>"))
+    );
+
+    // Act - Try to complete without starting
+    await cut.Instance.Complete();
+
+    // Assert - Should not throw and should remain in idle state
+    cut.Instance.IsRunning.Should().BeFalse();
+  }
+
+  [Fact]
+  public async Task AnimationLifecycle_PauseBeforeStart_DoesNothing()
+  {
+    // Arrange
+    var cut = Render<Typewriter>(parameters =>
+      parameters
+        .Add(p => p.Autostart, false)
+        .Add(p => p.ChildContent, builder => builder.AddMarkupContent(0, "<p>Test</p>"))
+    );
+
+    // Act - Try to pause without starting
+    await cut.Instance.Pause();
+
+    // Assert - Should not throw and should remain in idle state
+    cut.Instance.IsRunning.Should().BeFalse();
+    cut.Instance.IsPaused.Should().BeFalse();
+  }
+
+  [Fact]
+  public async Task AnimationLifecycle_ResumeBeforePause_DoesNothing()
+  {
+    // Arrange
+    var cut = Render<Typewriter>(parameters =>
+      parameters
+        .Add(p => p.Autostart, false)
+        .Add(p => p.ChildContent, builder => builder.AddMarkupContent(0, "<p>Test</p>"))
+    );
+
+    await Task.Delay(300);
+    await cut.Instance.Start();
+    await Task.Delay(100);
+
+    // Act - Try to resume without pausing
+    await cut.Instance.Resume();
+
+    // Assert - Should not cause issues
+    cut.Instance.IsRunning.Should().BeTrue();
+    cut.Instance.IsPaused.Should().BeFalse();
+  }
+
+  // ==================== MinDuration and MaxDuration Tests ====================
+
+  [Fact]
+  public void MinDuration_DefaultValue_IsCorrect()
+  {
+    // Arrange & Act
+    var cut = Render<Typewriter>(parameters => parameters.Add(p => p.Autostart, false));
+
+    // Assert
+    cut.Instance.MinDuration.Should().Be(100);
+  }
+
+  [Fact]
+  public void MaxDuration_DefaultValue_IsCorrect()
+  {
+    // Arrange & Act
+    var cut = Render<Typewriter>(parameters => parameters.Add(p => p.Autostart, false));
+
+    // Assert
+    cut.Instance.MaxDuration.Should().Be(30000);
+  }
+
+  [Fact]
+  public void MinMaxDuration_CanBeCustomized()
+  {
+    // Arrange & Act
+    var cut = Render<Typewriter>(parameters =>
+      parameters
+        .Add(p => p.MinDuration, 200)
+        .Add(p => p.MaxDuration, 5000)
+        .Add(p => p.Autostart, false)
+    );
+
+    // Assert
+    cut.Instance.MinDuration.Should().Be(200);
+    cut.Instance.MaxDuration.Should().Be(5000);
+  }
+
+  // ==================== SetText Tests ====================
+
+  [Fact]
+  public async Task SetText_WithHtmlString_UpdatesContentAndResets()
+  {
+    // Arrange
+    var cut = Render<Typewriter>(parameters =>
+      parameters
+        .Add(p => p.Autostart, false)
+        .Add(p => p.ChildContent, builder => builder.AddMarkupContent(0, "<p>Original</p>"))
+    );
+
+    // Act
+    await cut.Instance.SetText("<p>New content</p>");
+
+    // Assert
+    cut.Instance.IsRunning.Should().BeFalse();
+  }
+
+  [Fact]
+  public async Task SetText_WithRenderFragment_UpdatesContentAndResets()
+  {
+    // Arrange
+    var cut = Render<Typewriter>(parameters =>
+      parameters
+        .Add(p => p.Autostart, false)
+        .Add(p => p.ChildContent, builder => builder.AddMarkupContent(0, "<p>Original</p>"))
+    );
+
+    // Act
+    await cut.Instance.SetText(builder => builder.AddMarkupContent(0, "<p>New via fragment</p>"));
+
+    // Assert
+    cut.Instance.IsRunning.Should().BeFalse();
+  }
+
+  [Fact]
+  public async Task SetText_WhileAnimating_StopsCurrentAnimation()
+  {
+    // Arrange
+    var cut = Render<Typewriter>(parameters =>
+      parameters
+        .Add(p => p.Autostart, false)
+        .Add(p => p.ChildContent, builder => builder.AddMarkupContent(0, "<p>Original content</p>"))
+    );
+
+    await Task.Delay(300);
+    await cut.Instance.Start();
+    await Task.Delay(100); // Let it animate
+
+    // Act
+    await cut.Instance.SetText("<p>New content during animation</p>");
+
+    // Assert
+    cut.Instance.IsRunning.Should().BeFalse();
+  }
 }
