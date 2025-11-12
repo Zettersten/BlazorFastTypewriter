@@ -1,0 +1,11 @@
+@namespace BlazorFastTypewriter.Demo.Components
+@using Microsoft.AspNetCore.Components
+
+<div class="code-sample">
+    @ChildContent
+</div>
+
+@code {
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+}
