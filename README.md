@@ -163,8 +163,8 @@ The library opts into invariant globalization to minimize ICU payload size. If y
 | :------------------------- | :------------------------------------- | :------- | :---------- |
 | `ChildContent`             | `RenderFragment?`                      | `null`   | The content to be animated. Supports any HTML markup including nested structures, links, code blocks, and components. |
 | `Speed`                    | `int`                                  | `100`    | Typing speed in characters per second. Higher values animate faster. |
-| `MinDuration`              | `int`                                  | `50`     | Minimum animation duration in milliseconds. Ensures animations don't complete too quickly. |
-| `MaxDuration`              | `int`                                  | `500`    | Maximum animation duration in milliseconds. Prevents animations from taking too long. |
+| `MinDuration`              | `int`                                  | `100`    | Minimum animation duration in milliseconds. Ensures animations don't complete too quickly. |
+| `MaxDuration`              | `int`                                  | `30000`  | Maximum animation duration in milliseconds (30 seconds). Prevents animations from taking too long. |
 | `Autostart`                | `bool`                                 | `true`   | Whether to automatically start the animation when the component loads. Set to `false` to control manually. |
 | `Dir`                      | `string`                               | `"ltr"`  | Text direction: `"ltr"` for left-to-right or `"rtl"` for right-to-left. Affects rendering and animation flow. |
 | `RespectMotionPreference`  | `bool`                                 | `false`  | Whether to respect the `prefers-reduced-motion` media query. When enabled, content appears instantly if the user prefers reduced motion. |

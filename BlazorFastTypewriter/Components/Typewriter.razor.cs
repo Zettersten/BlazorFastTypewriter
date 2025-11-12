@@ -44,16 +44,16 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
   public int Speed { get; set; } = 100;
 
   /// <summary>
-  /// Gets or sets the minimum animation duration in milliseconds (default: 500).
+  /// Gets or sets the minimum animation duration in milliseconds (default: 100).
   /// </summary>
   [Parameter]
-  public int MinDuration { get; set; } = 500;
+  public int MinDuration { get; set; } = 100;
 
   /// <summary>
-  /// Gets or sets the maximum animation duration in milliseconds (default: 500).
+  /// Gets or sets the maximum animation duration in milliseconds (default: 30000).
   /// </summary>
   [Parameter]
-  public int MaxDuration { get; set; } = 500;
+  public int MaxDuration { get; set; } = 30000;
 
   /// <summary>
   /// Gets or sets whether to auto-start the animation on load (default: true).
