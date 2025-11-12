@@ -1,9 +1,8 @@
 using Bunit;
+using Bunit.JSInterop;
 using FluentAssertions;
 using Microsoft.AspNetCore.Components;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.JSInterop;
-using Moq;
 using Xunit;
 
 namespace BlazorFastTypewriter.Tests;
@@ -14,12 +13,45 @@ namespace BlazorFastTypewriter.Tests;
 /// </summary>
 public class TypewriterTests : TestContext
 {
-  private readonly Mock<IJSRuntime> _jsRuntimeMock;
+  private readonly BunitJSInterop _jsInterop;
 
   public TypewriterTests()
   {
-    _jsRuntimeMock = new Mock<IJSRuntime>();
-    Services.AddSingleton(_jsRuntimeMock.Object);
+    _jsInterop = JSInterop;
+    
+    // Setup JS module import - Bunit will handle the module reference
+    var module = _jsInterop.SetupModule("./_content/BlazorFastTypewriter/Components/Typewriter.razor.js");
+    
+    // Setup checkReducedMotion to return false
+    module.Setup<bool>("checkReducedMotion")
+      .SetResult(false);
+    
+    // Setup extractStructure to return a DOM structure
+    // The JSON structure will be deserialized by System.Text.Json into DomStructure
+    var jsonStructure = new
+    {
+      nodes = new[]
+      {
+        new
+        {
+          type = "element",
+          tagName = "p",
+          attributes = new Dictionary<string, string>(),
+          children = new[]
+          {
+            new
+            {
+              type = "text",
+              text = "Test"
+            }
+          }
+        }
+      }
+    };
+    
+    // Setup extractStructure - match any arguments (containerId)
+    module.Setup<object>("extractStructure")
+      .SetResult(jsonStructure);
   }
 
   [Fact]
@@ -110,8 +142,12 @@ public class TypewriterTests : TestContext
         .Add(p => p.ChildContent, builder => builder.AddMarkupContent(0, "<p>Test</p>"))
     );
 
+    // Wait for component to initialize (OnAfterRenderAsync completes)
+    await Task.Delay(300);
+
     // Act
     await cut.Instance.Start();
+    await Task.Delay(200); // Allow animation to start and operations to be processed
 
     // Assert
     cut.Instance.IsRunning.Should().BeTrue();
@@ -147,10 +183,13 @@ public class TypewriterTests : TestContext
         .Add(p => p.ChildContent, builder => builder.AddMarkupContent(0, "<p>Test</p>"))
     );
 
+    // Wait for component to initialize
+    await Task.Delay(300);
     await cut.Instance.Start();
+    await Task.Delay(200); // Allow animation to start
 
     // Act
-    cut.Instance.Pause();
+    await cut.Instance.Pause();
 
     // Assert
     cut.Instance.IsPaused.Should().BeTrue();
@@ -158,13 +197,13 @@ public class TypewriterTests : TestContext
   }
 
   [Fact]
-  public void Pause_WhenNotRunning_DoesNothing()
+  public async Task Pause_WhenNotRunning_DoesNothing()
   {
     // Arrange
     var cut = Render<Typewriter>(parameters => parameters.Add(p => p.Autostart, false));
 
     // Act
-    cut.Instance.Pause();
+    await cut.Instance.Pause();
 
     // Assert
     cut.Instance.IsPaused.Should().BeFalse();
@@ -181,7 +220,8 @@ public class TypewriterTests : TestContext
     );
 
     await cut.Instance.Start();
-    cut.Instance.Pause();
+    await Task.Delay(100); // Allow animation to start
+    await cut.Instance.Pause();
 
     // Act
     await cut.Instance.Resume();
@@ -201,6 +241,7 @@ public class TypewriterTests : TestContext
     );
 
     await cut.Instance.Start();
+    await Task.Delay(100); // Allow animation to start
 
     // Act
     await cut.Instance.Complete();
@@ -295,10 +336,13 @@ public class TypewriterTests : TestContext
         .Add(p => p.OnPause, EventCallback.Factory.Create(this, () => pauseFired = true))
     );
 
+    // Wait for component to initialize
+    await Task.Delay(300);
     await cut.Instance.Start();
+    await Task.Delay(200); // Allow animation to start
 
     // Act
-    cut.Instance.Pause();
+    await cut.Instance.Pause();
 
     // Assert
     pauseFired.Should().BeTrue();
@@ -317,7 +361,8 @@ public class TypewriterTests : TestContext
     );
 
     await cut.Instance.Start();
-    cut.Instance.Pause();
+    await Task.Delay(100); // Allow animation to start
+    await cut.Instance.Pause();
 
     // Act
     await cut.Instance.Resume();
@@ -339,6 +384,7 @@ public class TypewriterTests : TestContext
     );
 
     await cut.Instance.Start();
+    await Task.Delay(100); // Allow animation to start
 
     // Act
     await cut.Instance.Complete();
