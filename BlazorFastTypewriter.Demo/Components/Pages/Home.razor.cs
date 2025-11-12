@@ -370,23 +370,11 @@ public partial class Home
     {
       IsUser = false,
       Time = DateTime.Now,
-      TypewriterContent = builder => builder.AddMarkupContent(0, aiResponse)
+      TypewriterContent = builder => builder.AddMarkupContent(0, aiResponse),
+      ShouldAutoStart = true // Enable autostart for this message
     };
     _chatMessages.Add(aiMessage);
     StateHasChanged();
-
-    // Small delay to ensure the Typewriter component is rendered
-    await Task.Delay(100);
-
-    // Start typewriter animation
-    if (aiMessage.TypewriterRef is not null)
-    {
-      await aiMessage.TypewriterRef.Start();
-    }
-    else
-    {
-      _isAiTyping = false;
-    }
   }
 
   private string GenerateAiResponse(string input)
@@ -430,6 +418,6 @@ public partial class Home
     public bool IsUser { get; set; }
     public DateTime Time { get; set; }
     public RenderFragment? TypewriterContent { get; set; }
-    public Typewriter? TypewriterRef { get; set; }
+    public bool ShouldAutoStart { get; set; }
   }
 }

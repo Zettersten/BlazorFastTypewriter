@@ -399,8 +399,7 @@
                         else if (message.TypewriterContent is not null)
                         {
                             <div class="message-content">
-                                <Typewriter @ref="message.TypewriterRef"
-                                            Autostart="false"
+                                <Typewriter Autostart="@message.ShouldAutoStart"
                                             Speed="@_aiChatSpeed"
                                             OnComplete="@(() => HandleAiMessageComplete(message))">
                                     @message.TypewriterContent
