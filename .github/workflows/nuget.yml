@@ -106,7 +106,7 @@ jobs:
         # MinVer automatically calculates version during pack
         # Extract version from generated package filename
         PACKAGE=$(ls ./artifacts/*.nupkg | grep -v symbols | head -n 1)
-        VERSION=$(basename "$PACKAGE" | sed 's/BlazorFastTypewriter\.(.*)\.nupkg/\1/')
+        VERSION=$(basename "$PACKAGE" | sed -E 's/BlazorFastTypewriter\.(.*)\.nupkg/\1/')
         echo "📦 Package Version: $VERSION"
           
     - name: Validate NuGet package
