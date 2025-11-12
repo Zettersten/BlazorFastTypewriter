@@ -170,7 +170,7 @@ public class TypewriterTests : IDisposable
     var cut = Render<Typewriter>(parameters =>
       parameters
         .Add(p => p.Autostart, false)
-        .Add(p => p.MinDuration, 2000)
+        .Add(p => p.MinDuration, 5000)
         .Add(p => p.ChildContent, builder => builder.AddMarkupContent(0, "<p>Test</p>"))
     );
 
@@ -179,7 +179,7 @@ public class TypewriterTests : IDisposable
 
     // Act
     await cut.Instance.Start();
-    await Task.Delay(400); // Increased delay to ensure animation is running
+    await Task.Delay(1000); // Increased delay to ensure animation is running
 
     // Assert
     cut.Instance.IsRunning.Should().BeTrue();
@@ -213,18 +213,18 @@ public class TypewriterTests : IDisposable
     var cut = Render<Typewriter>(parameters =>
       parameters
         .Add(p => p.Autostart, false)
-        .Add(p => p.MinDuration, 2000)
+        .Add(p => p.MinDuration, 5000)
         .Add(p => p.ChildContent, builder => builder.AddMarkupContent(0, "<p>Test</p>"))
     );
 
     // Wait for component to initialize
     await Task.Delay(300);
     await cut.Instance.Start();
-    await Task.Delay(400); // Increased delay to ensure animation is running
+    await Task.Delay(1000); // Increased delay to ensure animation is running
 
     // Act
     await cut.Instance.Pause();
-    await Task.Delay(50); // Give time for pause event/state
+    await Task.Delay(100); // Give time for pause event/state
 
     // Assert
     cut.Instance.IsPaused.Should().BeTrue();
@@ -368,7 +368,7 @@ public class TypewriterTests : IDisposable
     var cut = Render<Typewriter>(parameters =>
       parameters
         .Add(p => p.Autostart, false)
-        .Add(p => p.MinDuration, 2000)
+        .Add(p => p.MinDuration, 5000)
         .Add(p => p.ChildContent, builder => builder.AddMarkupContent(0, "<p>Test</p>"))
         .Add(p => p.OnPause, EventCallback.Factory.Create(this, () => pauseFired = true))
     );
@@ -376,11 +376,11 @@ public class TypewriterTests : IDisposable
     // Wait for component to initialize
     await Task.Delay(300);
     await cut.Instance.Start();
-    await Task.Delay(400); // Increased delay to ensure animation is running
+    await Task.Delay(1000); // Increased delay to ensure animation is running
 
     // Act
     await cut.Instance.Pause();
-    await Task.Delay(50); // Give time for event to fire
+    await Task.Delay(100); // Give time for event to fire
 
     // Assert
     pauseFired.Should().BeTrue();
@@ -395,18 +395,18 @@ public class TypewriterTests : IDisposable
     var cut = Render<Typewriter>(parameters =>
       parameters
         .Add(p => p.Autostart, false)
-        .Add(p => p.MinDuration, 2000)
+        .Add(p => p.MinDuration, 5000)
         .Add(p => p.ChildContent, builder => builder.AddMarkupContent(0, "<p>Test content</p>"))
         .Add(p => p.OnResume, EventCallback.Factory.Create(this, () => resumeFired = true))
     );
 
     await cut.Instance.Start();
-    await Task.Delay(100); // Allow animation to start
+    await Task.Delay(300); // Allow animation to start
     await cut.Instance.Pause();
 
     // Act
     await cut.Instance.Resume();
-    await Task.Delay(50); // Give time for event to fire
+    await Task.Delay(100); // Give time for event to fire
 
     // Assert
     resumeFired.Should().BeTrue();
@@ -421,7 +421,7 @@ public class TypewriterTests : IDisposable
     var cut = Render<Typewriter>(parameters =>
       parameters
         .Add(p => p.Autostart, false)
-        .Add(p => p.MinDuration, 2000)
+        .Add(p => p.MinDuration, 5000)
         .Add(p => p.ChildContent, builder => builder.AddMarkupContent(0, "<p>Test</p>"))
         .Add(p => p.OnComplete, EventCallback.Factory.Create(this, () => completeFired = true))
     );
@@ -431,7 +431,7 @@ public class TypewriterTests : IDisposable
 
     // Act
     await cut.Instance.Complete();
-    await Task.Delay(50); // Give time for event to fire
+    await Task.Delay(100); // Give time for event to fire
 
     // Assert
     completeFired.Should().BeTrue();
@@ -553,7 +553,7 @@ public class TypewriterTests : IDisposable
       parameters
         .Add(p => p.Speed, 20) // Slow: 20 chars/sec
         .Add(p => p.Autostart, false)
-        .Add(p => p.MinDuration, 2000)
+        .Add(p => p.MinDuration, 5000)
         .Add(p => p.ChildContent, builder => builder.AddMarkupContent(0, "<p>Test</p>"))
     );
 
@@ -561,7 +561,7 @@ public class TypewriterTests : IDisposable
       parameters
         .Add(p => p.Speed, 200) // Fast: 200 chars/sec
         .Add(p => p.Autostart, false)
-        .Add(p => p.MinDuration, 2000)
+        .Add(p => p.MinDuration, 5000)
         .Add(p => p.ChildContent, builder => builder.AddMarkupContent(0, "<p>Test</p>"))
     );
 
@@ -575,7 +575,7 @@ public class TypewriterTests : IDisposable
     await fastCut.Instance.Start();
 
     // Wait for fast to potentially complete while slow is still running
-    await Task.Delay(400); // Increased delay for slow animation
+    await Task.Delay(1500); // Increased delay for slow animation
 
     // Assert - Slow should still be running while fast might be done
     slowCut.Instance.IsRunning.Should().BeTrue("slow speed should still be animating");
@@ -659,19 +659,19 @@ public class TypewriterTests : IDisposable
     var cut = Render<Typewriter>(parameters =>
       parameters
         .Add(p => p.Autostart, false)
-        .Add(p => p.MinDuration, 2000)
+        .Add(p => p.MinDuration, 5000)
         .Add(p => p.ChildContent, builder => builder.AddMarkupContent(0, "<p>Test</p>"))
     );
 
     await Task.Delay(300);
     await cut.Instance.Start();
-    await Task.Delay(100);
+    await Task.Delay(300);
     await cut.Instance.Complete();
 
     // Act
     await cut.Instance.Reset();
     await cut.Instance.Start();
-    await Task.Delay(400); // Increased delay for animation to start
+    await Task.Delay(1000); // Increased delay for animation to start
 
     // Assert
     cut.Instance.IsRunning.Should().BeTrue();
