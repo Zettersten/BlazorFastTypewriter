@@ -69,6 +69,10 @@
   </ItemGroup>
   
   <ItemGroup>
+    <Content Include="Components\Typewriter.razor.js" />
+  </ItemGroup>
+  
+  <ItemGroup>
     <!-- Support both Server and WASM Blazor hosting models -->
     <SupportedPlatform Include="browser" />
   </ItemGroup>
