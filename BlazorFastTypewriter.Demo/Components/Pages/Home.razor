@@ -1,67 +1,172 @@
 @page "/"
 @using BlazorFastTypewriter
+@rendermode InteractiveServer
 
-<PageTitle>Home - BlazorFastTypewriter Demo</PageTitle>
+<PageTitle>BlazorFastTypewriter Demo</PageTitle>
 
-<div class="hero">
-    <h1>⚡ BlazorFastTypewriter</h1>
-    <p class="tagline">High-performance, zero-allocation typewriter component for Blazor</p>
-    
-    <div class="hero-typewriter">
-        <!-- demo -->
+<div class="wrapper">
+    <h1>Typewriter Blazor Component</h1>
+    <div class="demo-section">
+        <h2>Interactive Demo</h2>
+
+        <div id="controls">
+            <button @onclick="Start" disabled="@(_isRunning)">Start</button>
+            <button @onclick="Pause" disabled="@(!_isRunning || _isPaused)">Pause</button>
+            <button @onclick="Resume" disabled="@(!_isPaused)">Resume</button>
+            <button @onclick="Complete" disabled="@(!_isRunning)">Complete</button>
+            <button @onclick="Reset" disabled="@(_isRunning && !_isPaused)">Reset</button>
+        </div>
+
+        <Typewriter @ref="_typewriter"
+                    Autostart="true"
+                    Speed="60"
+                    OnStart="HandleStart"
+                    OnPause="HandlePause"
+                    OnResume="HandleResume"
+                    OnComplete="HandleComplete"
+                    OnReset="HandleReset"
+                    OnProgress="HandleProgress">
+            <h3>TypeWriter Blazor Component</h3>
+            <p>A high-performance Blazor component for character-by-character text animation with HTML support. Suitable for interactive storytelling, educational tutorials, chat simulations, and dynamic content presentation.</p>
+
+            <h4>Features</h4>
+            <ul>
+                <li><strong>HTML Support</strong> — Preserves tags including <em>emphasis</em>, <a href="#">links</a>, <code>code</code>, and nested structures</li>
+                <li><strong>Bidirectional Text</strong> — Supports LTR and RTL text direction via <code>Dir</code> parameter</li>
+                <li><strong>Dynamic Content</strong> — Update content with <code>SetTextAsync()</code> method</li>
+                <li><strong>Playback Control</strong> — Methods for start, pause, resume, complete, and reset</li>
+                <li><strong>Progress Events</strong> — Dispatches progress events during animation</li>
+                <li><strong>Accessibility Features</strong> — ARIA live regions and optional reduced motion support</li>
+            </ul>
+
+            <h4>Configuration Parameters</h4>
+            <ul>
+                <li><code>Speed</code> — Characters per second (default: 100)</li>
+                <li><code>MinDuration</code> — Minimum animation duration in ms (default: 50)</li>
+                <li><code>MaxDuration</code> — Maximum animation duration in ms (default: 500)</li>
+                <li><code>Autostart</code> — Auto-start on load, set to <code>false</code> to disable (default: true)</li>
+                <li><code>Dir</code> — Text direction: "ltr" or "rtl" (default: ltr)</li>
+                <li><code>RespectMotionPreference</code> — Respect prefers-reduced-motion media query (default: false)</li>
+                <li><code>AriaLabel</code> — ARIA label for the container region</li>
+            </ul>
+
+            <h4>Blazor API Methods</h4>
+            <ul>
+                <li><code>StartAsync()</code> — Begin animation from start</li>
+                <li><code>Pause()</code> — Pause animation</li>
+                <li><code>ResumeAsync()</code> — Resume paused animation</li>
+                <li><code>CompleteAsync()</code> — Display all content instantly</li>
+                <li><code>ResetAsync()</code> — Clear content and reset state</li>
+                <li><code>SetTextAsync(html)</code> — Replace content and reset</li>
+            </ul>
+
+            <h4>Events</h4>
+            <ul>
+                <li><code>OnStart</code> — Fired when animation begins</li>
+                <li><code>OnPause</code> — Fired when animation pauses</li>
+                <li><code>OnResume</code> — Fired when animation resumes</li>
+                <li><code>OnComplete</code> — Fired when animation finishes</li>
+                <li><code>OnReset</code> — Fired when component resets</li>
+                <li><code>OnProgress</code> — Fired every 10 characters with {Current, Total, Percent}</li>
+            </ul>
+
+            <h4>RTL Support</h4>
+            <p dir="rtl">يدعم المكوّن <strong>النصوص العربية</strong> مع الحفاظ على الاتجاه الصحيح. يمكن دمج <a href="#">الروابط</a> والنصوص الإنجليزية مثل <code>TypeWriter</code> داخل المحتوى العربي.</p>
+            <ul dir="rtl">
+                <li>يدعم القوائم النقطية بالاتجاه الصحيح</li>
+                <li>يحافظ على <strong>التنسيق</strong> داخل العناصر</li>
+                <li>يعمل مع <code>الأكواد</code> والعناصر المضمنة</li>
+            </ul>
+
+            <h4>Technical Details</h4>
+            <p>Built using Blazor Component Model with modern .NET 10 features. Uses efficient DOM extraction via JavaScript interop for HTML parsing. Optimized for minimal allocations and maximum performance. Works in modern browsers supporting Blazor Server and WebAssembly.</p>
+        </Typewriter>
+
+        <div id="progress">@_progressText</div>
     </div>
 </div>
 
-<section class="features">
-    <h2>Key Features</h2>
-    
-    <div class="feature-grid">
-        <div class="feature-card">
-            <div class="feature-icon">⚡</div>
-            <h3>High Performance</h3>
-            <p>CSS-based animations with GPU acceleration. Zero JavaScript overhead during animation.</p>
-        </div>
-        
-        <div class="feature-card">
-            <div class="feature-icon">🎯</div>
-            <h3>Zero Allocation</h3>
-            <p>Aggressively optimized for minimal memory allocations. ~95% reduction in GC pressure.</p>
-        </div>
-        
-        <div class="feature-card">
-            <div class="feature-icon">🎨</div>
-            <h3>Fully Customizable</h3>
-            <p>etc...</p>
-        </div>
-        
-        <div class="feature-card">
-            <div class="feature-icon">🌐</div>
-            <h3>Platform Compatible</h3>
-            <p>Works seamlessly with SSR, Blazor Server, and WebAssembly.</p>
-        </div>
-    </div>
-</section>
+@code {
+    private Typewriter? _typewriter;
+    private bool _isRunning;
+    private bool _isPaused;
+    private string _progressText = string.Empty;
 
-<section class="demo-section">
-    <h2>Basic Example</h2>
-    <p>The simplest typewriter - just add content and go!</p>
-    
-    <div class="demo-container">
-        <!-- demo -->
-    </div>
-    
-    <div class="code-block">
-        <pre><code><!-- example code --></code></pre>
-    </div>
-</section>
+    private async Task Start()
+    {
+        if (_typewriter is not null)
+        {
+            await _typewriter.StartAsync();
+        }
+    }
 
-<section class="cta">
-    <h2>Ready to Get Started?</h2>
-    <p>Explore the examples in the sidebar to see all the amazing features!</p>
-    
-    <div class="cta-buttons">
-        <a href="https://www.nuget.org/packages/BlazorFastTypewriter/" class="btn btn-primary" target="_blank">📦 Get on NuGet</a>
-        <a href="/directions" class="btn btn-primary">View Examples</a>
-        <a href="https://github.com/Zettersten/BlazorFastTypewriter" class="btn btn-secondary" target="_blank">Documentation</a>
-    </div>
-</section>
+    private void Pause()
+    {
+        _typewriter?.Pause();
+    }
+
+    private async Task Resume()
+    {
+        if (_typewriter is not null)
+        {
+            await _typewriter.ResumeAsync();
+        }
+    }
+
+    private async Task Complete()
+    {
+        if (_typewriter is not null)
+        {
+            await _typewriter.CompleteAsync();
+        }
+    }
+
+    private async Task Reset()
+    {
+        if (_typewriter is not null)
+        {
+            await _typewriter.ResetAsync();
+        }
+    }
+
+    private void HandleStart()
+    {
+        _isRunning = true;
+        _isPaused = false;
+        StateHasChanged();
+    }
+
+    private void HandlePause()
+    {
+        _isPaused = true;
+        StateHasChanged();
+    }
+
+    private void HandleResume()
+    {
+        _isPaused = false;
+        StateHasChanged();
+    }
+
+    private void HandleComplete()
+    {
+        _isRunning = false;
+        _isPaused = false;
+        _progressText = "Animation complete!";
+        StateHasChanged();
+    }
+
+    private void HandleReset()
+    {
+        _isRunning = false;
+        _isPaused = false;
+        _progressText = string.Empty;
+        StateHasChanged();
+    }
+
+    private void HandleProgress(ProgressEventArgs args)
+    {
+        _progressText = $"Progress: {args.Percent:F1}% ({args.Current}/{args.Total})";
+        StateHasChanged();
+    }
+}

@@ -1,1 +1,20 @@
 @namespace BlazorFastTypewriter
+
+<div @ref="_containerRef" 
+     data-typewriter-id="@_containerId"
+     class="type-writer-container" 
+     role="region" 
+     aria-live="polite" 
+     aria-atomic="false"
+     aria-busy="@(_isRunning ? "true" : "false")"
+     aria-label="@AriaLabel"
+     style="direction: @Dir">
+    @if (CurrentContent is not null)
+    {
+        @CurrentContent
+    }
+    else if (ChildContent is not null)
+    {
+        @ChildContent
+    }
+</div>

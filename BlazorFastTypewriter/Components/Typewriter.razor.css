@@ -1,0 +1,198 @@
+/* Modern CSS for Typewriter component using cutting-edge features */
+
+.type-writer-container {
+    display: block;
+    margin-block: 1rem;
+    
+    /* Use container queries for responsive typography */
+    container-type: inline-size;
+    
+    /* Optimize rendering performance */
+    contain: layout style paint;
+    will-change: contents;
+    
+    /* Smooth text rendering */
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+    .type-writer-container {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+/* Modern color utilities using color-mix */
+:root {
+    --typewriter-bg: color-mix(in oklch, canvas, canvasText 2%);
+    --typewriter-text: color-mix(in oklch, canvasText, canvas 95%);
+    --typewriter-accent: color-mix(in oklch, canvasText 80%, canvas);
+}
+
+/* Support for dark mode */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --typewriter-bg: color-mix(in oklch, canvas, canvasText 5%);
+        --typewriter-text: color-mix(in oklch, canvasText, canvas 90%);
+    }
+}
+
+/* Use modern CSS features for better performance */
+.type-writer-container * {
+    /* Optimize font rendering */
+    font-optical-sizing: auto;
+    font-variant-numeric: normal;
+    
+    /* Improve text selection */
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    user-select: text;
+}
+
+/* Ensure proper text direction support */
+.type-writer-container[dir="rtl"] {
+    direction: rtl;
+    text-align: right;
+}
+
+.type-writer-container[dir="ltr"] {
+    direction: ltr;
+    text-align: left;
+}
+
+/* Accessibility: Ensure proper focus indicators */
+.type-writer-container:focus-visible {
+    outline: 2px solid color-mix(in oklch, currentColor 50%, transparent);
+    outline-offset: 2px;
+}
+
+/* Performance optimizations */
+.type-writer-container[aria-busy="true"] {
+    /* Hint to browser for optimization during animation */
+    content-visibility: auto;
+}
+
+/* Modern spacing using logical properties */
+.type-writer-container > * + * {
+    margin-block-start: 1em;
+}
+
+.type-writer-container > h1,
+.type-writer-container > h2,
+.type-writer-container > h3,
+.type-writer-container > h4,
+.type-writer-container > h5,
+.type-writer-container > h6 {
+    margin-block-start: 0;
+    text-wrap: balance;
+}
+
+/* Use modern list styling */
+.type-writer-container ul,
+.type-writer-container ol {
+    padding-inline-start: 1.5em;
+}
+
+.type-writer-container li {
+    margin-block: 0.5em;
+}
+
+/* Code and pre elements with modern styling */
+.type-writer-container code {
+    font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', 'Fira Code', monospace;
+    font-size: 0.9em;
+    padding: 0.2em 0.4em;
+    background: color-mix(in oklch, var(--typewriter-bg), var(--typewriter-text) 10%);
+    border-radius: 0.25em;
+    word-break: break-word;
+}
+
+.type-writer-container pre {
+    font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', 'Fira Code', monospace;
+    font-size: 0.9rem;
+    padding: 1rem;
+    background: color-mix(in oklch, var(--typewriter-bg), var(--typewriter-text) 5%);
+    border-radius: 0.5em;
+    overflow-x: auto;
+    overflow-y: hidden;
+    
+    /* Modern scrollbar styling */
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklch, var(--typewriter-text) 30%, transparent) transparent;
+}
+
+.type-writer-container pre code {
+    background: none;
+    padding: 0;
+    word-break: normal;
+}
+
+/* Links with modern hover effects */
+.type-writer-container a {
+    color: var(--typewriter-accent);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+    transition: color 0.2s ease, text-decoration-color 0.2s ease;
+    text-decoration-color: color-mix(in oklch, var(--typewriter-accent), transparent 40%);
+}
+
+.type-writer-container a:hover,
+.type-writer-container a:focus-visible {
+    color: var(--typewriter-text);
+    text-decoration-color: currentColor;
+}
+
+/* Use modern CSS for emphasis */
+.type-writer-container strong,
+.type-writer-container b {
+    font-weight: 600;
+    color: color-mix(in oklch, var(--typewriter-text), var(--typewriter-accent) 20%);
+}
+
+.type-writer-container em,
+.type-writer-container i {
+    font-style: italic;
+}
+
+/* Modern table support if needed */
+.type-writer-container table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-block: 1em;
+}
+
+.type-writer-container th,
+.type-writer-container td {
+    padding: 0.5em;
+    border: 1px solid color-mix(in oklch, var(--typewriter-text) 20%, transparent);
+}
+
+.type-writer-container th {
+    background: color-mix(in oklch, var(--typewriter-bg), var(--typewriter-text) 5%);
+    font-weight: 600;
+}
+
+/* Container query for responsive adjustments */
+@container (min-width: 768px) {
+    .type-writer-container {
+        font-size: 1.05em;
+        line-height: 1.6;
+    }
+}
+
+/* Print styles */
+@media print {
+    .type-writer-container {
+        color: black;
+        background: white;
+    }
+    
+    .type-writer-container a {
+        color: black;
+        text-decoration: underline;
+    }
+}
