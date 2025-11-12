@@ -2,171 +2,839 @@
 @using BlazorFastTypewriter
 @rendermode InteractiveServer
 
-<PageTitle>BlazorFastTypewriter Demo</PageTitle>
+<PageTitle>BlazorFastTypewriter - High-Performance Typewriter Component</PageTitle>
 
-<div class="wrapper">
-    <h1>Typewriter Blazor Component</h1>
-    <div class="demo-section">
-        <h2>Interactive Demo</h2>
-
-        <div id="controls">
-            <button @onclick="Start" disabled="@(_isRunning)">Start</button>
-            <button @onclick="Pause" disabled="@(!_isRunning || _isPaused)">Pause</button>
-            <button @onclick="Resume" disabled="@(!_isPaused)">Resume</button>
-            <button @onclick="Complete" disabled="@(!_isRunning)">Complete</button>
-            <button @onclick="Reset" disabled="@(_isRunning && !_isPaused)">Reset</button>
-        </div>
-
-        <Typewriter @ref="_typewriter"
+<div class="hero-section">
+    <h1>BlazorFastTypewriter</h1>
+    <p class="hero-subtitle">High-performance Blazor component for character-by-character text animation with HTML support</p>
+    
+    <div class="hero-demo">
+        <Typewriter @ref="_heroTypewriter"
                     Autostart="true"
-                    Speed="60"
-                    OnStart="HandleStart"
-                    OnPause="HandlePause"
-                    OnResume="HandleResume"
-                    OnComplete="HandleComplete"
-                    OnReset="HandleReset"
-                    OnProgress="HandleProgress">
-            <h3>TypeWriter Blazor Component</h3>
-            <p>A high-performance Blazor component for character-by-character text animation with HTML support. Suitable for interactive storytelling, educational tutorials, chat simulations, and dynamic content presentation.</p>
-
-            <h4>Features</h4>
-            <ul>
-                <li><strong>HTML Support</strong> — Preserves tags including <em>emphasis</em>, <a href="#">links</a>, <code>code</code>, and nested structures</li>
-                <li><strong>Bidirectional Text</strong> — Supports LTR and RTL text direction via <code>Dir</code> parameter</li>
-                <li><strong>Dynamic Content</strong> — Update content with <code>SetTextAsync()</code> method</li>
-                <li><strong>Playback Control</strong> — Methods for start, pause, resume, complete, and reset</li>
-                <li><strong>Progress Events</strong> — Dispatches progress events during animation</li>
-                <li><strong>Accessibility Features</strong> — ARIA live regions and optional reduced motion support</li>
-            </ul>
-
-            <h4>Configuration Parameters</h4>
-            <ul>
-                <li><code>Speed</code> — Characters per second (default: 100)</li>
-                <li><code>MinDuration</code> — Minimum animation duration in ms (default: 50)</li>
-                <li><code>MaxDuration</code> — Maximum animation duration in ms (default: 500)</li>
-                <li><code>Autostart</code> — Auto-start on load, set to <code>false</code> to disable (default: true)</li>
-                <li><code>Dir</code> — Text direction: "ltr" or "rtl" (default: ltr)</li>
-                <li><code>RespectMotionPreference</code> — Respect prefers-reduced-motion media query (default: false)</li>
-                <li><code>AriaLabel</code> — ARIA label for the container region</li>
-            </ul>
-
-            <h4>Blazor API Methods</h4>
-            <ul>
-                <li><code>StartAsync()</code> — Begin animation from start</li>
-                <li><code>Pause()</code> — Pause animation</li>
-                <li><code>ResumeAsync()</code> — Resume paused animation</li>
-                <li><code>CompleteAsync()</code> — Display all content instantly</li>
-                <li><code>ResetAsync()</code> — Clear content and reset state</li>
-                <li><code>SetTextAsync(html)</code> — Replace content and reset</li>
-            </ul>
-
-            <h4>Events</h4>
-            <ul>
-                <li><code>OnStart</code> — Fired when animation begins</li>
-                <li><code>OnPause</code> — Fired when animation pauses</li>
-                <li><code>OnResume</code> — Fired when animation resumes</li>
-                <li><code>OnComplete</code> — Fired when animation finishes</li>
-                <li><code>OnReset</code> — Fired when component resets</li>
-                <li><code>OnProgress</code> — Fired every 10 characters with {Current, Total, Percent}</li>
-            </ul>
-
-            <h4>RTL Support</h4>
-            <p dir="rtl">يدعم المكوّن <strong>النصوص العربية</strong> مع الحفاظ على الاتجاه الصحيح. يمكن دمج <a href="#">الروابط</a> والنصوص الإنجليزية مثل <code>TypeWriter</code> داخل المحتوى العربي.</p>
-            <ul dir="rtl">
-                <li>يدعم القوائم النقطية بالاتجاه الصحيح</li>
-                <li>يحافظ على <strong>التنسيق</strong> داخل العناصر</li>
-                <li>يعمل مع <code>الأكواد</code> والعناصر المضمنة</li>
-            </ul>
-
-            <h4>Technical Details</h4>
-            <p>Built using Blazor Component Model with modern .NET 10 features. Uses efficient DOM extraction via JavaScript interop for HTML parsing. Optimized for minimal allocations and maximum performance. Works in modern browsers supporting Blazor Server and WebAssembly.</p>
+                    Speed="80"
+                    OnComplete="HandleHeroComplete">
+            <div class="hero-content">
+                <h2>Welcome to BlazorFastTypewriter</h2>
+                <p>A modern, performant typewriter component built for <strong>Blazor</strong> applications. Perfect for interactive storytelling, educational tutorials, chat simulations, and dynamic content presentation.</p>
+            </div>
         </Typewriter>
-
-        <div id="progress">@_progressText</div>
     </div>
 </div>
 
+<div class="features-grid">
+    <div class="feature-card">
+        <div class="feature-icon">⚡</div>
+        <h3>High Performance</h3>
+        <p>Optimized for minimal allocations using modern .NET 10 features</p>
+    </div>
+    <div class="feature-card">
+        <div class="feature-icon">🎨</div>
+        <h3>HTML Support</h3>
+        <p>Preserves tags, links, code blocks, and nested structures</p>
+    </div>
+    <div class="feature-card">
+        <div class="feature-icon">🌐</div>
+        <h3>RTL Support</h3>
+        <p>Full bidirectional text support for Arabic, Hebrew, and more</p>
+    </div>
+    <div class="feature-card">
+        <div class="feature-icon">♿</div>
+        <h3>Accessible</h3>
+        <p>ARIA live regions and reduced motion support</p>
+    </div>
+</div>
+
+<section class="demo-section">
+    <h2>Basic Usage</h2>
+    <p>Get started with a simple typewriter animation. The component automatically starts when the page loads.</p>
+    
+    <div class="demo-container">
+        <div class="demo-preview">
+            <Typewriter @ref="_basicTypewriter"
+                        Autostart="false"
+                        Speed="60">
+                <p>This is a <strong>simple example</strong> of the typewriter component. It types character by character, preserving <em>formatting</em> and <a href="#">links</a>.</p>
+            </Typewriter>
+        </div>
+        
+        <div class="demo-controls">
+            <button @onclick="StartBasic" disabled="@(_basicRunning)">Start</button>
+            <button @onclick="ResetBasic" disabled="@(_basicRunning)">Reset</button>
+        </div>
+    </div>
+    
+    <CodeSample>
+        <pre><code>&lt;Typewriter Speed="60" Autostart="false"&gt;
+    &lt;p&gt;This is a &lt;strong&gt;simple example&lt;/strong&gt; of the typewriter component.&lt;/p&gt;
+&lt;/Typewriter&gt;</code></pre>
+    </CodeSample>
+</section>
+
+<section class="demo-section">
+    <h2>Speed Control</h2>
+    <p>Control the typing speed using the <code>Speed</code> parameter (characters per second). Adjust the slider to see different speeds.</p>
+    
+    <div class="demo-container">
+        <div class="speed-control">
+            <label>
+                Speed: <strong>@_speed</strong> chars/sec
+                <input type="range" min="20" max="200" step="10" value="@_speed" @onchange="HandleSpeedChange" />
+            </label>
+        </div>
+        
+        <div class="demo-preview">
+            <Typewriter @ref="_speedTypewriter"
+                        Autostart="false"
+                        Speed="@_speed">
+                <p>Watch how the typing speed changes as you adjust the slider. This demonstrates the <code>Speed</code> parameter in action.</p>
+            </Typewriter>
+        </div>
+        
+        <div class="demo-controls">
+            <button @onclick="StartSpeed" disabled="@(_speedRunning)">Start</button>
+            <button @onclick="ResetSpeed" disabled="@(_speedRunning)">Reset</button>
+        </div>
+    </div>
+    
+    <CodeSample>
+        <pre><code>&lt;Typewriter Speed="@_speed"&gt;
+    &lt;p&gt;Content here...&lt;/p&gt;
+&lt;/Typewriter&gt;
+
+@code {
+    private int _speed = 100; // Characters per second
+}</code></pre>
+    </CodeSample>
+</section>
+
+<section class="demo-section">
+    <h2>HTML & Formatting Support</h2>
+    <p>The component preserves HTML structure, including headings, lists, links, code blocks, and nested elements.</p>
+    
+    <div class="demo-container">
+        <div class="demo-preview">
+            <Typewriter @ref="_htmlTypewriter"
+                        Autostart="false"
+                        Speed="50">
+                <div>
+                    <h3>Rich Content Example</h3>
+                    <p>This demonstrates <strong>bold text</strong>, <em>italic text</em>, and <a href="#">clickable links</a>.</p>
+                    <ul>
+                        <li>List item with <code>code</code> inside</li>
+                        <li>Another item with <strong>formatting</strong></li>
+                        <li>Nested <em>elements</em> work perfectly</li>
+                    </ul>
+                    <p>You can even include <span style="color: #667eea;">colored text</span> and other inline styles.</p>
+                </div>
+            </Typewriter>
+        </div>
+        
+        <div class="demo-controls">
+            <button @onclick="StartHtml" disabled="@(_htmlRunning)">Start</button>
+            <button @onclick="ResetHtml" disabled="@(_htmlRunning)">Reset</button>
+        </div>
+    </div>
+    
+    <CodeSample>
+        <pre><code>&lt;Typewriter Speed="50"&gt;
+    &lt;div&gt;
+        &lt;h3&gt;Rich Content Example&lt;/h3&gt;
+        &lt;p&gt;This demonstrates &lt;strong&gt;bold text&lt;/strong&gt;, 
+            &lt;em&gt;italic text&lt;/em&gt;, and &lt;a href="#"&gt;links&lt;/a&gt;.&lt;/p&gt;
+        &lt;ul&gt;
+            &lt;li&gt;List item with &lt;code&gt;code&lt;/code&gt; inside&lt;/li&gt;
+        &lt;/ul&gt;
+    &lt;/div&gt;
+&lt;/Typewriter&gt;</code></pre>
+    </CodeSample>
+</section>
+
+<section class="demo-section">
+    <h2>Playback Controls</h2>
+    <p>Full programmatic control over the animation with Start, Pause, Resume, Complete, and Reset methods.</p>
+    
+    <div class="demo-container">
+        <div class="demo-preview">
+            <Typewriter @ref="_controlTypewriter"
+                        Autostart="false"
+                        Speed="70"
+                        OnStart="HandleControlStart"
+                        OnPause="HandleControlPause"
+                        OnResume="HandleControlResume"
+                        OnComplete="HandleControlComplete">
+                <div>
+                    <h3>Interactive Controls Demo</h3>
+                    <p>Use the buttons below to control the animation. You can pause, resume, complete instantly, or reset to start over.</p>
+                    <p>Status: <strong>@_controlStatus</strong></p>
+                </div>
+            </Typewriter>
+        </div>
+        
+        <div class="demo-controls">
+            <button @onclick="StartControl" disabled="@(_controlRunning && !_controlPaused)">Start</button>
+            <button @onclick="PauseControl" disabled="@(!_controlRunning || _controlPaused)">Pause</button>
+            <button @onclick="ResumeControl" disabled="@(!_controlPaused)">Resume</button>
+            <button @onclick="CompleteControl" disabled="@(!_controlRunning)">Complete</button>
+            <button @onclick="ResetControl" disabled="@(_controlRunning && !_controlPaused)">Reset</button>
+        </div>
+    </div>
+    
+    <CodeSample>
+        <pre><code>&lt;Typewriter @ref="_typewriter" Autostart="false"&gt;
+    &lt;p&gt;Content...&lt;/p&gt;
+&lt;/Typewriter&gt;
+
+&lt;button @onclick="Start"&gt;Start&lt;/button&gt;
+&lt;button @onclick="Pause"&gt;Pause&lt;/button&gt;
+&lt;button @onclick="Resume"&gt;Resume&lt;/button&gt;
+&lt;button @onclick="Complete"&gt;Complete&lt;/button&gt;
+&lt;button @onclick="Reset"&gt;Reset&lt;/button&gt;
+
 @code {
     private Typewriter? _typewriter;
-    private bool _isRunning;
-    private bool _isPaused;
-    private string _progressText = string.Empty;
-
+    
     private async Task Start()
     {
         if (_typewriter is not null)
-        {
             await _typewriter.Start();
-        }
     }
-
-    private void Pause()
-    {
-        _typewriter?.Pause();
-    }
-
+    
+    private void Pause() => _typewriter?.Pause();
+    
     private async Task Resume()
     {
         if (_typewriter is not null)
-        {
             await _typewriter.Resume();
-        }
     }
-
+    
     private async Task Complete()
     {
         if (_typewriter is not null)
-        {
             await _typewriter.Complete();
-        }
     }
-
+    
     private async Task Reset()
     {
         if (_typewriter is not null)
-        {
             await _typewriter.Reset();
-        }
     }
+}</code></pre>
+    </CodeSample>
+</section>
 
-    private void HandleStart()
-    {
-        _isRunning = true;
-        _isPaused = false;
-        StateHasChanged();
-    }
+<section class="demo-section">
+    <h2>Progress Tracking</h2>
+    <p>Monitor animation progress with the <code>OnProgress</code> event callback, fired every 10 characters.</p>
+    
+    <div class="demo-container">
+        <div class="progress-display">
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: @(_progressPercent)%"></div>
+            </div>
+            <div class="progress-text">
+                @_progressText
+            </div>
+        </div>
+        
+        <div class="demo-preview">
+            <Typewriter @ref="_progressTypewriter"
+                        Autostart="false"
+                        Speed="60"
+                        OnProgress="HandleProgress"
+                        OnComplete="HandleProgressComplete">
+                <p>This example demonstrates progress tracking. Watch the progress bar and percentage update as the text types out character by character.</p>
+            </Typewriter>
+        </div>
+        
+        <div class="demo-controls">
+            <button @onclick="StartProgress" disabled="@(_progressRunning)">Start</button>
+            <button @onclick="ResetProgress" disabled="@(_progressRunning)">Reset</button>
+        </div>
+    </div>
+    
+    <CodeSample>
+        <pre><code>&lt;Typewriter @ref="_typewriter"
+            OnProgress="HandleProgress"
+            OnComplete="HandleComplete"&gt;
+    &lt;p&gt;Content...&lt;/p&gt;
+&lt;/Typewriter&gt;
 
-    private void HandlePause()
-    {
-        _isPaused = true;
-        StateHasChanged();
-    }
+&lt;div&gt;Progress: @_percent% (@_current/@_total)&lt;/div&gt;
 
-    private void HandleResume()
-    {
-        _isPaused = false;
-        StateHasChanged();
-    }
-
-    private void HandleComplete()
-    {
-        _isRunning = false;
-        _isPaused = false;
-        _progressText = "Animation complete!";
-        StateHasChanged();
-    }
-
-    private void HandleReset()
-    {
-        _isRunning = false;
-        _isPaused = false;
-        _progressText = string.Empty;
-        StateHasChanged();
-    }
-
+@code {
+    private Typewriter? _typewriter;
+    private double _percent = 0;
+    private int _current = 0;
+    private int _total = 0;
+    
     private void HandleProgress(TypewriterProgressEventArgs args)
     {
-        _progressText = $"Progress: {args.Percent:F1}% ({args.Current}/{args.Total})";
+        _percent = args.Percent;
+        _current = args.Current;
+        _total = args.Total;
         StateHasChanged();
+    }
+    
+    private void HandleComplete()
+    {
+        // Animation completed
+    }
+}</code></pre>
+    </CodeSample>
+</section>
+
+<section class="demo-section">
+    <h2>RTL (Right-to-Left) Support</h2>
+    <p>Full support for bidirectional text including Arabic, Hebrew, and other RTL languages.</p>
+    
+    <div class="demo-container">
+        <div class="demo-preview">
+            <Typewriter @ref="_rtlTypewriter"
+                        Autostart="false"
+                        Speed="50"
+                        Dir="rtl">
+                <div dir="rtl">
+                    <h3>دعم اللغة العربية</h3>
+                    <p>يدعم المكوّن <strong>النصوص العربية</strong> مع الحفاظ على الاتجاه الصحيح. يمكن دمج <a href="#">الروابط</a> والنصوص الإنجليزية مثل <code>TypeWriter</code> داخل المحتوى العربي.</p>
+                    <ul>
+                        <li>يدعم القوائم النقطية بالاتجاه الصحيح</li>
+                        <li>يحافظ على <strong>التنسيق</strong> داخل العناصر</li>
+                        <li>يعمل مع <code>الأكواد</code> والعناصر المضمنة</li>
+                    </ul>
+                </div>
+            </Typewriter>
+        </div>
+        
+        <div class="demo-controls">
+            <button @onclick="StartRtl" disabled="@(_rtlRunning)">Start</button>
+            <button @onclick="ResetRtl" disabled="@(_rtlRunning)">Reset</button>
+        </div>
+    </div>
+    
+    <CodeSample>
+        <pre><code>&lt;Typewriter Dir="rtl" Speed="50"&gt;
+    &lt;div dir="rtl"&gt;
+        &lt;p&gt;النص العربي هنا...&lt;/p&gt;
+    &lt;/div&gt;
+&lt;/Typewriter&gt;</code></pre>
+    </CodeSample>
+</section>
+
+<section class="demo-section">
+    <h2>Dynamic Content Updates</h2>
+    <p>Change content dynamically using the <code>SetText</code> method with either HTML strings or RenderFragment.</p>
+    
+    <div class="demo-container">
+        <div class="demo-preview">
+            <Typewriter @ref="_dynamicTypewriter"
+                        Autostart="false"
+                        Speed="60">
+                <p>Initial content. Click the buttons below to change this text dynamically.</p>
+            </Typewriter>
+        </div>
+        
+        <div class="demo-controls">
+            <button @onclick="SetText1" disabled="@(_dynamicRunning)">Set Text 1</button>
+            <button @onclick="SetText2" disabled="@(_dynamicRunning)">Set Text 2</button>
+            <button @onclick="SetTextHtml" disabled="@(_dynamicRunning)">Set HTML</button>
+            <button @onclick="ResetDynamic" disabled="@(_dynamicRunning)">Reset</button>
+        </div>
+    </div>
+    
+    <CodeSample>
+        <pre><code>&lt;Typewriter @ref="_typewriter" Autostart="false"&gt;
+    &lt;p&gt;Initial content...&lt;/p&gt;
+&lt;/Typewriter&gt;
+
+&lt;button @onclick="ChangeText"&gt;Change Text&lt;/button&gt;
+
+@code {
+    private Typewriter? _typewriter;
+    
+    private async Task ChangeText()
+    {
+        if (_typewriter is null) return;
+        
+        // Using HTML string
+        await _typewriter.SetText("&lt;p&gt;New &lt;strong&gt;content&lt;/strong&gt; here!&lt;/p&gt;");
+        
+        // Or using RenderFragment
+        await _typewriter.SetText(builder => {
+            builder.OpenElement(0, "p");
+            builder.AddContent(1, "New content with ");
+            builder.OpenElement(2, "strong");
+            builder.AddContent(3, "formatting");
+            builder.CloseElement();
+            builder.CloseElement();
+        });
+        
+        // Start animation after setting text
+        await _typewriter.Start();
+    }
+}</code></pre>
+    </CodeSample>
+</section>
+
+<section class="demo-section">
+    <h2>API Reference</h2>
+    <p>Complete reference of all parameters, methods, and events available in the Typewriter component.</p>
+    
+    <div class="api-reference">
+        <div class="api-section">
+            <h3>Parameters</h3>
+            <table class="api-table">
+                <thead>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Type</th>
+                        <th>Default</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>Speed</code></td>
+                        <td>int</td>
+                        <td>100</td>
+                        <td>Typing speed in characters per second</td>
+                    </tr>
+                    <tr>
+                        <td><code>MinDuration</code></td>
+                        <td>int</td>
+                        <td>50</td>
+                        <td>Minimum animation duration in milliseconds</td>
+                    </tr>
+                    <tr>
+                        <td><code>MaxDuration</code></td>
+                        <td>int</td>
+                        <td>500</td>
+                        <td>Maximum animation duration in milliseconds</td>
+                    </tr>
+                    <tr>
+                        <td><code>Autostart</code></td>
+                        <td>bool</td>
+                        <td>true</td>
+                        <td>Auto-start animation on component load</td>
+                    </tr>
+                    <tr>
+                        <td><code>Dir</code></td>
+                        <td>string</td>
+                        <td>"ltr"</td>
+                        <td>Text direction: "ltr" or "rtl"</td>
+                    </tr>
+                    <tr>
+                        <td><code>RespectMotionPreference</code></td>
+                        <td>bool</td>
+                        <td>false</td>
+                        <td>Respect prefers-reduced-motion media query</td>
+                    </tr>
+                    <tr>
+                        <td><code>AriaLabel</code></td>
+                        <td>string?</td>
+                        <td>null</td>
+                        <td>ARIA label for accessibility</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="api-section">
+            <h3>Methods</h3>
+            <table class="api-table">
+                <thead>
+                    <tr>
+                        <th>Method</th>
+                        <th>Returns</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>Start()</code></td>
+                        <td>Task</td>
+                        <td>Begin animation from the start</td>
+                    </tr>
+                    <tr>
+                        <td><code>Pause()</code></td>
+                        <td>void</td>
+                        <td>Pause the current animation</td>
+                    </tr>
+                    <tr>
+                        <td><code>Resume()</code></td>
+                        <td>Task</td>
+                        <td>Resume a paused animation</td>
+                    </tr>
+                    <tr>
+                        <td><code>Complete()</code></td>
+                        <td>Task</td>
+                        <td>Display all content instantly</td>
+                    </tr>
+                    <tr>
+                        <td><code>Reset()</code></td>
+                        <td>Task</td>
+                        <td>Clear content and reset state</td>
+                    </tr>
+                    <tr>
+                        <td><code>SetText(string html)</code></td>
+                        <td>Task</td>
+                        <td>Replace content with HTML string</td>
+                    </tr>
+                    <tr>
+                        <td><code>SetText(RenderFragment)</code></td>
+                        <td>Task</td>
+                        <td>Replace content with RenderFragment</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="api-section">
+            <h3>Events</h3>
+            <table class="api-table">
+                <thead>
+                    <tr>
+                        <th>Event</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>OnStart</code></td>
+                        <td>EventCallback</td>
+                        <td>Fired when animation begins</td>
+                    </tr>
+                    <tr>
+                        <td><code>OnPause</code></td>
+                        <td>EventCallback</td>
+                        <td>Fired when animation pauses</td>
+                    </tr>
+                    <tr>
+                        <td><code>OnResume</code></td>
+                        <td>EventCallback</td>
+                        <td>Fired when animation resumes</td>
+                    </tr>
+                    <tr>
+                        <td><code>OnComplete</code></td>
+                        <td>EventCallback</td>
+                        <td>Fired when animation finishes</td>
+                    </tr>
+                    <tr>
+                        <td><code>OnReset</code></td>
+                        <td>EventCallback</td>
+                        <td>Fired when component resets</td>
+                    </tr>
+                    <tr>
+                        <td><code>OnProgress</code></td>
+                        <td>EventCallback&lt;TypewriterProgressEventArgs&gt;</td>
+                        <td>Fired every 10 characters with progress info</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="api-section">
+            <h3>Properties</h3>
+            <table class="api-table">
+                <thead>
+                    <tr>
+                        <th>Property</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>IsRunning</code></td>
+                        <td>bool</td>
+                        <td>Whether animation is currently running</td>
+                    </tr>
+                    <tr>
+                        <td><code>IsPaused</code></td>
+                        <td>bool</td>
+                        <td>Whether animation is currently paused</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+@code {
+    // Hero
+    private Typewriter? _heroTypewriter;
+    
+    // Basic
+    private Typewriter? _basicTypewriter;
+    private bool _basicRunning;
+    
+    // Speed
+    private Typewriter? _speedTypewriter;
+    private bool _speedRunning;
+    private int _speed = 100;
+    
+    // HTML
+    private Typewriter? _htmlTypewriter;
+    private bool _htmlRunning;
+    
+    // Controls
+    private Typewriter? _controlTypewriter;
+    private bool _controlRunning;
+    private bool _controlPaused;
+    private string _controlStatus = "Ready";
+    
+    // Progress
+    private Typewriter? _progressTypewriter;
+    private bool _progressRunning;
+    private double _progressPercent;
+    private string _progressText = "Ready";
+    
+    // RTL
+    private Typewriter? _rtlTypewriter;
+    private bool _rtlRunning;
+    
+    // Dynamic
+    private Typewriter? _dynamicTypewriter;
+    private bool _dynamicRunning;
+    
+    // Hero handlers
+    private void HandleHeroComplete()
+    {
+        // Auto-restart hero after delay
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(3000);
+            if (_heroTypewriter is not null)
+            {
+                await _heroTypewriter.Reset();
+                await _heroTypewriter.Start();
+            }
+        });
+    }
+    
+    // Basic handlers
+    private async Task StartBasic()
+    {
+        if (_basicTypewriter is not null)
+        {
+            _basicRunning = true;
+            await _basicTypewriter.Start();
+        }
+    }
+    
+    private async Task ResetBasic()
+    {
+        if (_basicTypewriter is not null)
+        {
+            await _basicTypewriter.Reset();
+            _basicRunning = false;
+        }
+    }
+    
+    // Speed handlers
+    private void HandleSpeedChange(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var newSpeed))
+        {
+            _speed = newSpeed;
+        }
+    }
+    
+    private async Task StartSpeed()
+    {
+        if (_speedTypewriter is not null)
+        {
+            _speedRunning = true;
+            await _speedTypewriter.Start();
+        }
+    }
+    
+    private async Task ResetSpeed()
+    {
+        if (_speedTypewriter is not null)
+        {
+            await _speedTypewriter.Reset();
+            _speedRunning = false;
+        }
+    }
+    
+    // HTML handlers
+    private async Task StartHtml()
+    {
+        if (_htmlTypewriter is not null)
+        {
+            _htmlRunning = true;
+            await _htmlTypewriter.Start();
+        }
+    }
+    
+    private async Task ResetHtml()
+    {
+        if (_htmlTypewriter is not null)
+        {
+            await _htmlTypewriter.Reset();
+            _htmlRunning = false;
+        }
+    }
+    
+    // Control handlers
+    private void HandleControlStart()
+    {
+        _controlRunning = true;
+        _controlPaused = false;
+        _controlStatus = "Running";
+        StateHasChanged();
+    }
+    
+    private void HandleControlPause()
+    {
+        _controlPaused = true;
+        _controlStatus = "Paused";
+        StateHasChanged();
+    }
+    
+    private void HandleControlResume()
+    {
+        _controlPaused = false;
+        _controlStatus = "Running";
+        StateHasChanged();
+    }
+    
+    private void HandleControlComplete()
+    {
+        _controlRunning = false;
+        _controlPaused = false;
+        _controlStatus = "Complete";
+        StateHasChanged();
+    }
+    
+    private async Task StartControl()
+    {
+        if (_controlTypewriter is not null)
+        {
+            await _controlTypewriter.Start();
+        }
+    }
+    
+    private void PauseControl()
+    {
+        _controlTypewriter?.Pause();
+    }
+    
+    private async Task ResumeControl()
+    {
+        if (_controlTypewriter is not null)
+        {
+            await _controlTypewriter.Resume();
+        }
+    }
+    
+    private async Task CompleteControl()
+    {
+        if (_controlTypewriter is not null)
+        {
+            await _controlTypewriter.Complete();
+        }
+    }
+    
+    private async Task ResetControl()
+    {
+        if (_controlTypewriter is not null)
+        {
+            await _controlTypewriter.Reset();
+            _controlStatus = "Ready";
+        }
+    }
+    
+    // Progress handlers
+    private void HandleProgress(TypewriterProgressEventArgs args)
+    {
+        _progressPercent = args.Percent;
+        _progressText = $"Progress: {args.Percent:F1}% ({args.Current}/{args.Total} characters)";
+        StateHasChanged();
+    }
+    
+    private void HandleProgressComplete()
+    {
+        _progressRunning = false;
+        _progressText = "Complete!";
+        StateHasChanged();
+    }
+    
+    private async Task StartProgress()
+    {
+        if (_progressTypewriter is not null)
+        {
+            _progressRunning = true;
+            _progressText = "Starting...";
+            await _progressTypewriter.Start();
+        }
+    }
+    
+    private async Task ResetProgress()
+    {
+        if (_progressTypewriter is not null)
+        {
+            await _progressTypewriter.Reset();
+            _progressRunning = false;
+            _progressPercent = 0;
+            _progressText = "Ready";
+        }
+    }
+    
+    // RTL handlers
+    private async Task StartRtl()
+    {
+        if (_rtlTypewriter is not null)
+        {
+            _rtlRunning = true;
+            await _rtlTypewriter.Start();
+        }
+    }
+    
+    private async Task ResetRtl()
+    {
+        if (_rtlTypewriter is not null)
+        {
+            await _rtlTypewriter.Reset();
+            _rtlRunning = false;
+        }
+    }
+    
+    // Dynamic handlers
+    private async Task SetText1()
+    {
+        if (_dynamicTypewriter is not null)
+        {
+            await _dynamicTypewriter.SetText("<p>This is the <strong>first</strong> dynamic text update!</p>");
+            await _dynamicTypewriter.Start();
+        }
+    }
+    
+    private async Task SetText2()
+    {
+        if (_dynamicTypewriter is not null)
+        {
+            await _dynamicTypewriter.SetText("<p>This is the <em>second</em> dynamic text update with different content.</p>");
+            await _dynamicTypewriter.Start();
+        }
+    }
+    
+    private async Task SetTextHtml()
+    {
+        if (_dynamicTypewriter is not null)
+        {
+            await _dynamicTypewriter.SetText("<div><h3>HTML Content</h3><p>You can set <strong>rich HTML</strong> content dynamically!</p><ul><li>List item 1</li><li>List item 2</li></ul></div>");
+            await _dynamicTypewriter.Start();
+        }
+    }
+    
+    private async Task ResetDynamic()
+    {
+        if (_dynamicTypewriter is not null)
+        {
+            await _dynamicTypewriter.SetText("<p>Initial content. Click the buttons below to change this text dynamically.</p>");
+            await _dynamicTypewriter.Reset();
+        }
     }
 }
