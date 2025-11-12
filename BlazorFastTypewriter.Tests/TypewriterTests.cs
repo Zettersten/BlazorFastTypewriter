@@ -1,8 +1,6 @@
 using Bunit;
-using Bunit.JSInterop;
 using FluentAssertions;
 using Microsoft.AspNetCore.Components;
-using Microsoft.JSInterop;
 using Xunit;
 
 namespace BlazorFastTypewriter.Tests;
@@ -13,21 +11,22 @@ namespace BlazorFastTypewriter.Tests;
 /// </summary>
 public class TypewriterTests : IDisposable
 {
-  private readonly TestContext _testContext;
+  private readonly BunitContext _testContext;
   private readonly BunitJSInterop _jsInterop;
 
   public TypewriterTests()
   {
-    _testContext = new TestContext();
+    _testContext = new BunitContext();
     _jsInterop = _testContext.JSInterop;
-    
+
     // Setup JS module import - Bunit will handle the module reference
-    var module = _jsInterop.SetupModule("./_content/BlazorFastTypewriter/Components/Typewriter.razor.js");
-    
+    var module = _jsInterop.SetupModule(
+      "./_content/BlazorFastTypewriter/Components/Typewriter.razor.js"
+    );
+
     // Setup checkReducedMotion to return false
-    module.Setup<bool>("checkReducedMotion")
-      .SetResult(false);
-    
+    module.Setup<bool>("checkReducedMotion").SetResult(false);
+
     // Setup extractStructure to return a DOM structure
     // The JSON structure will be deserialized by System.Text.Json into DomStructure
     var jsonStructure = new
@@ -39,25 +38,19 @@ public class TypewriterTests : IDisposable
           type = "element",
           tagName = "p",
           attributes = new Dictionary<string, string>(),
-          children = new[]
-          {
-            new
-            {
-              type = "text",
-              text = "Test"
-            }
-          }
+          children = new[] { new { type = "text", text = "Test" } }
         }
       }
     };
-    
+
     // Setup extractStructure - match any arguments (containerId)
-    module.Setup<object>("extractStructure")
-      .SetResult(jsonStructure);
+    module.Setup<object>("extractStructure").SetResult(jsonStructure);
   }
 
-  private IRenderedComponent<T> Render<T>(Action<ComponentParameterCollectionBuilder<T>> parameterBuilder) where T : IComponent
-    => _testContext.RenderComponent<T>(parameterBuilder);
+  private IRenderedComponent<T> Render<T>(
+    Action<ComponentParameterCollectionBuilder<T>> parameterBuilder
+  )
+    where T : IComponent => _testContext.Render<T>(parameterBuilder);
 
   public void Dispose()
   {
