@@ -1,0 +1,47 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 18
+VisualStudioVersion = 18.0.11205.157 d18.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorFastTypewriter", "BlazorFastTypewriter\BlazorFastTypewriter.csproj", "{9718DA2C-39AF-2061-E6C9-3324943A41AA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorFastTypewriter.Demo", "BlazorFastTypewriter.Demo\BlazorFastTypewriter.Demo.csproj", "{55F3CC90-B54D-BE42-493A-3F77F15977AF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorFastTypewriter.Tests", "BlazorFastTypewriter.Tests\BlazorFastTypewriter.Tests.csproj", "{5C34A951-4424-7ACD-C532-5C60936BC224}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "misc", "misc", "{94C72520-2F5E-475F-9B8B-D66F300394EF}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		.gitattributes = .gitattributes
+		.gitignore = .gitignore
+		.github\workflows\deploy-demo.yml = .github\workflows\deploy-demo.yml
+		NuGet.config = NuGet.config
+		.github\workflows\nuget.yml = .github\workflows\nuget.yml
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9718DA2C-39AF-2061-E6C9-3324943A41AA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9718DA2C-39AF-2061-E6C9-3324943A41AA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9718DA2C-39AF-2061-E6C9-3324943A41AA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9718DA2C-39AF-2061-E6C9-3324943A41AA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{55F3CC90-B54D-BE42-493A-3F77F15977AF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{55F3CC90-B54D-BE42-493A-3F77F15977AF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{55F3CC90-B54D-BE42-493A-3F77F15977AF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{55F3CC90-B54D-BE42-493A-3F77F15977AF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5C34A951-4424-7ACD-C532-5C60936BC224}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5C34A951-4424-7ACD-C532-5C60936BC224}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5C34A951-4424-7ACD-C532-5C60936BC224}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5C34A951-4424-7ACD-C532-5C60936BC224}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {91657B91-BA8A-46CA-A83F-171C599CE9E2}
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,44 @@
+@inherits LayoutComponentBase
+
+<div class="page">
+    <nav class="sidebar">
+        <div class="sidebar-brand">
+            <img src="icon.png" alt="BlazorFastTypewriter Logo" class="brand-logo" />
+            <h1>BlazorFastTypewriter</h1>
+        </div>
+        
+        <div class="nav-section">
+            <h3>Getting Started</h3>
+            <NavLink href="" Match="NavLinkMatch.All">
+                <span class="icon">🏠</span> Home
+            </NavLink>
+        </div>
+        
+        <div class="nav-section">
+            <h3>Core Features</h3>
+            <NavLink href="">
+                <span class="icon">🧭</span> Home
+            </NavLink>
+        </div>
+        
+        <div class="nav-section">
+            <h3>Use Cases</h3>
+            <NavLink href="">
+                <span class="icon">🧭</span> Home
+            </NavLink>
+        </div>
+        
+        <div class="sidebar-footer">
+            <a href="https://www.nuget.org/packages/BlazorFastTypewriter/" target="_blank">
+                <span class="icon">📦</span> NuGet Package
+            </a>
+            <a href="https://github.com/Zettersten/BlazorFastTypewriter" target="_blank">
+                <span class="icon">⭐</span> Star on GitHub
+            </a>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        @Body
+    </main>
+</div>

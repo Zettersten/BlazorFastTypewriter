@@ -1,0 +1,52 @@
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RunAOTCompilation>false</RunAOTCompilation>
+    <!-- Default base path for local development -->
+    <BaseHref Condition="'$(BaseHref)' == ''">/</BaseHref>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.0" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BlazorFastTypewriter\BlazorFastTypewriter.csproj" />
+  </ItemGroup>
+
+  <!-- Replace BASE_HREF token in index.html during build -->
+  <Target Name="ReplaceBaseHref" AfterTargets="Publish">
+    <PropertyGroup>
+      <IndexHtmlPath>$(PublishDir)wwwroot\index.html</IndexHtmlPath>
+    </PropertyGroup>
+    <ReplaceFileText InputFilename="$(IndexHtmlPath)" OutputFilename="$(IndexHtmlPath)" MatchExpression="&lt;base href=&quot;/&quot; /&gt;" ReplacementText="&lt;base href=&quot;$(BaseHref)&quot; /&gt;" />
+  </Target>
+
+  <!-- Task to replace text in files -->
+  <UsingTask TaskName="ReplaceFileText" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <ParameterGroup>
+      <InputFilename ParameterType="System.String" Required="true" />
+      <OutputFilename ParameterType="System.String" Required="true" />
+      <MatchExpression ParameterType="System.String" Required="true" />
+      <ReplacementText ParameterType="System.String" Required="true" />
+    </ParameterGroup>
+    <Task>
+      <Using Namespace="System" />
+      <Using Namespace="System.IO" />
+      <Using Namespace="System.Text.RegularExpressions" />
+      <Code Type="Fragment" Language="cs">
+        <![CDATA[
+          File.WriteAllText(
+            OutputFilename,
+            Regex.Replace(File.ReadAllText(InputFilename), MatchExpression, ReplacementText)
+          );
+        ]]>
+      </Code>
+    </Task>
+  </UsingTask>
+
+</Project>

@@ -1,0 +1,87 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RazorLangVersion>latest</RazorLangVersion>
+    
+    <!-- Package Configuration -->
+    <IsPackable>true</IsPackable>
+    <PackageId>BlazorFastTypewriter</PackageId>
+    <Title>Blazor Fast Typewriter</Title>
+    <Authors>Zettersten</Authors>
+    <Company>Zettersten</Company>
+    <Product>BlazorFastTypewriter</Product>
+    <Description>High-performance Blazor typewriter component. Optimized for AOT, trimming-friendly, and deterministic.</Description>
+    <Copyright>Copyright © $(Authors) $([System.DateTime]::Now.Year)</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/Zettersten/BlazorFastTypewriter</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageTags>blazor;typewriter;components;webassembly;server;blazor-component;animation;carousel;ticker;aot;trimming</PackageTags>
+    <PackageReleaseNotes>See https://github.com/Zettersten/BlazorFastTypewriter/releases for release notes.</PackageReleaseNotes>
+    
+    <!-- Repository Configuration -->
+    <RepositoryUrl>https://github.com/Zettersten/BlazorFastTypewriter</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    
+    <!-- Versioning with MinVer (Git-based SemVer) -->
+    <MinVerTagPrefix>v</MinVerTagPrefix>
+    <MinVerMinimumMajorMinor>1.0</MinVerMinimumMajorMinor>
+    <MinVerDefaultPreReleaseIdentifiers>preview.0</MinVerDefaultPreReleaseIdentifiers>
+    
+    <!-- Build Optimization -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningLevel>9999</WarningLevel>
+    <NoWarn>$(NoWarn);CS1591</NoWarn><!-- Disable missing XML comment warnings -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+    
+    <!-- Trimming & AOT Configuration -->
+    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+    <IsTrimmable>true</IsTrimmable>
+    <PublishTrimmed>true</PublishTrimmed>
+    <TrimMode>link</TrimMode>
+    <RunAOTCompilation>true</RunAOTCompilation>
+    <IlcOptimizationPreference>Speed</IlcOptimizationPreference>
+    <IlcInvariantGlobalization>true</IlcInvariantGlobalization>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    
+    <!-- Source Link for debugging NuGet packages -->
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    
+    <!-- NuGet Package Validation -->
+    <!-- Enable after first version is published to NuGet.org -->
+    <!-- <EnablePackageValidation>true</EnablePackageValidation> -->
+    <!-- <PackageValidationBaselineVersion>1.0.0</PackageValidationBaselineVersion> -->
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../README.md" Pack="true" PackagePath="../" />
+    <None Include="../icon.png" Pack="true" PackagePath="../" Condition="Exists('../icon.png')" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <!-- Support both Server and WASM Blazor hosting models -->
+    <SupportedPlatform Include="browser" />
+  </ItemGroup>
+
+  <!-- Package references for Blazor components (works with both Server and WASM) -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.0" />
+  </ItemGroup>
+  
+  <!-- Build & Packaging Tools -->
+  <ItemGroup>
+    <PackageReference Include="MinVer" Version="6.1.0-beta.1" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="all" />
+    <PackageReference Include="DotNet.ReproducibleBuilds" Version="1.2.39" PrivateAssets="all" />
+  </ItemGroup>
+</Project>
