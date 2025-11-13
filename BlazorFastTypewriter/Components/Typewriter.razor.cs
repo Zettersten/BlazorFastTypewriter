@@ -146,15 +146,20 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
   /// Determines whether to show ChildContent fallback.
   /// Hides content when Autostart is enabled and component hasn't initialized yet to prevent flash.
   /// </summary>
-  private bool ShouldShowChildContent() => !Autostart || _isInitialized;
+  private bool ShouldShowChildContent() => CurrentContent is null && (!Autostart || _isInitialized);
 
   /// <summary>
   /// Gets visibility style to hide content flash before animation.
   /// </summary>
   private string GetVisibilityStyle()
   {
-    // Hide content during extraction phase to prevent flash
-    if (_isExtracting)
+    // Hide content in these scenarios:
+    // 1. During extraction phase
+    // 2. When running but content hasn't started animating
+    // 3. When Autostart is enabled but not yet initialized (prevents initial flash)
+    if (_isExtracting || 
+        (_isRunning && CurrentContent is null) ||
+        (Autostart && !_isInitialized))
       return "visibility: hidden;";
     
     return string.Empty;
@@ -163,9 +168,24 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
   protected override void OnInitialized()
   {
     _originalContent = ChildContent;
-    // Always set CurrentContent initially so there's something to display
-    // If autostart is enabled, it will be replaced when animation starts
-    CurrentContent = ChildContent;
+    // For Autostart, hide content until animation begins
+    // For manual start, show content immediately
+    CurrentContent = Autostart ? null : ChildContent;
+  }
+
+  protected override void OnParametersSet()
+  {
+    // CRITICAL: Update _originalContent when ChildContent parameter changes
+    // This ensures dynamic content updates (like AI chat) use the correct content
+    if (ChildContent != _originalContent && !_isRunning && !_isExtracting)
+    {
+      _originalContent = ChildContent;
+      // Don't update CurrentContent if Autostart - let the animation control it
+      if (!Autostart || _isInitialized)
+      {
+        CurrentContent = ChildContent;
+      }
+    }
   }
 
   protected override async Task OnAfterRenderAsync(bool firstRender)
