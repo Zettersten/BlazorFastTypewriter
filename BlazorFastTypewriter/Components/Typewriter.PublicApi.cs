@@ -57,8 +57,9 @@ public partial class Typewriter
 
           var structure = await _jsModule.InvokeAsync<DomStructure>(
             "extractStructure",
-            _containerId
+            [_containerId]
           );
+
           _operations = _domParser.ParseDomStructure(structure);
           _totalChars = _operations.Count(static op => op.Type == OperationType.Char);
         }
@@ -204,13 +205,14 @@ public partial class Typewriter
       );
       var delay = _totalChars > 0 ? Math.Max(8, duration / _totalChars) : 0;
 
-      _ = Task.Run(() =>
-        AnimateAsync(
-          gen,
-          delay,
-          _totalChars,
-          _cancellationTokenSource?.Token ?? CancellationToken.None
-        )
+      _ = Task.Run(
+        () =>
+          AnimateAsync(
+            gen,
+            delay,
+            _totalChars,
+            _cancellationTokenSource?.Token ?? CancellationToken.None
+          )
       );
     }
     finally

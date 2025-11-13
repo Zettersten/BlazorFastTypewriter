@@ -25,12 +25,13 @@ public partial class Typewriter
       await InvokeAsync(StateHasChanged);
       await Task.Delay(100);
 
-      var structure = await _jsModule.InvokeAsync<DomStructure>(
-        "extractStructure",
-        _containerId
-      );
-      _operations = _domParser.ParseDomStructure(structure);
-      _totalChars = _operations.Count(static op => op.Type == OperationType.Char);
+      var structure = await _jsModule.InvokeAsync<DomStructure>("extractStructure", [_containerId]);
+
+      if (structure is not null)
+      {
+        _operations = _domParser.ParseDomStructure(structure);
+        _totalChars = _operations.Count(static op => op.Type == OperationType.Char);
+      }
     }
     catch (Exception)
     {

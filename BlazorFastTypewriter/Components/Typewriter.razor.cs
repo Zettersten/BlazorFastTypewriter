@@ -217,14 +217,3 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
     }
   }
 }
-
-// Internal types for JS interop - using lowercase to match JavaScript convention
-internal sealed record DomStructure(DomNode[]? nodes);
-
-internal sealed record DomNode(
-  string type,
-  string? tagName = null,
-  Dictionary<string, string>? attributes = null,
-  string? text = null,
-  DomNode[]? children = null
-);
