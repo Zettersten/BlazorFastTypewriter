@@ -47,16 +47,16 @@ public partial class Typewriter
       {
         // CRITICAL: Set extraction flag to hide content during this phase
         _isExtracting = true;
-        
+
         // First, clear any existing content to force a clean render
         CurrentContent = null;
         await InvokeAsync(StateHasChanged).ConfigureAwait(false);
         await Task.Delay(50).ConfigureAwait(false);
-        
+
         // Now render the NEW content that needs to be extracted
         CurrentContent = _originalContent;
         await InvokeAsync(StateHasChanged).ConfigureAwait(false);
-        
+
         // Wait for Blazor to fully render the new content in the DOM
         await Task.Delay(200).ConfigureAwait(false);
 
@@ -64,9 +64,9 @@ public partial class Typewriter
           .InvokeAsync<DomStructure>("extractStructure", [_containerId])
           .ConfigureAwait(false);
 
-        _operations = _domParser.ParseDomStructure(structure);
+        _operations = DomParsingService.ParseDomStructure(structure);
         _totalChars = _operations.Count(static op => op.Type == OperationType.Char);
-        
+
         // Clear extraction flag
         _isExtracting = false;
       }
