@@ -1,11 +1,29 @@
 @namespace BlazorFastTypewriter.Demo.Components
 @using Microsoft.AspNetCore.Components
+@inject IJSRuntime JS
 
-<div class="code-sample">
+<div class="code-sample" @ref="_containerRef">
     @ChildContent
 </div>
 
 @code {
+    private ElementReference _containerRef;
+
     [Parameter]
     public RenderFragment? ChildContent { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("highlightCodeBlocks", _containerRef);
+            }
+            catch
+            {
+                // Highlight.js not loaded yet, ignore
+            }
+        }
+    }
 }

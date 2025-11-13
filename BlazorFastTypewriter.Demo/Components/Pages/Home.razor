@@ -1,88 +1,32 @@
 @page "/"
 @using BlazorFastTypewriter
 
-<PageTitle>BlazorFastTypewriter - High-Performance Typewriter Component</PageTitle>
+<PageTitle>BlazorFastTypewriter</PageTitle>
 
-<div class="hero-section">
+<div class="hero">
     <h1>BlazorFastTypewriter</h1>
-    <p class="hero-subtitle">High-performance Blazor component for character-by-character text animation with HTML support</p>
-    
-    <div class="hero-demo">
+    <p class="subtitle">A high-performance Blazor component for character-by-character text animation</p>
+</div>
+
+<section class="demo-section">
+    <h2>Live Demo</h2>
+    <div class="demo-box">
         <Typewriter @ref="_heroTypewriter"
                     Autostart="true"
-                    Speed="80"
-                    OnComplete="HandleHeroComplete">
-            <div class="hero-content">
-                <h2>Welcome to BlazorFastTypewriter</h2>
-                <p>A modern, performant typewriter component built for <strong>Blazor</strong> applications. Perfect for interactive storytelling, educational tutorials, chat simulations, and dynamic content presentation.</p>
-            </div>
+                    Speed="80">
+            <p>This is a <strong>simple example</strong> of the typewriter component. It types character by character, preserving <em>formatting</em> and <a href="#">links</a>. Perfect for interactive storytelling, tutorials, chat simulations, and dynamic content.</p>
         </Typewriter>
     </div>
-</div>
+</section>
 
-<div class="quick-nav">
-    <h2>Explore Demos</h2>
-    <p>Choose a demo from the sidebar to see the component in action:</p>
-    
-    <div class="quick-nav-grid">
-        <a href="/basics" class="quick-nav-card">
-            <span class="nav-icon">📝</span>
-            <h3>Basics</h3>
-            <p>Speed control, HTML support, and RTL text</p>
-        </a>
-        
-        <a href="/seek" class="quick-nav-card">
-            <span class="nav-icon">🎯</span>
-            <h3>Seek & Scrubbing</h3>
-            <p>Jump to any position with interactive controls</p>
-        </a>
-        
-        <a href="/playback" class="quick-nav-card">
-            <span class="nav-icon">🎮</span>
-            <h3>Playback Controls</h3>
-            <p>Pause, resume, and progress tracking</p>
-        </a>
-        
-        <a href="/ai-chat" class="quick-nav-card">
-            <span class="nav-icon">💬</span>
-            <h3>AI Chat Demo</h3>
-            <p>Simulate AI assistant streaming responses</p>
-        </a>
-    </div>
-</div>
-
-<div class="features-grid" style="margin-top: 3rem;">
-    <div class="feature-card">
-        <div class="feature-icon">⚡</div>
-        <h3>High Performance</h3>
-        <p>Optimized for minimal allocations using modern .NET 10 features</p>
-    </div>
-    <div class="feature-card">
-        <div class="feature-icon">🎨</div>
-        <h3>HTML Support</h3>
-        <p>Preserves tags, links, code blocks, and nested structures</p>
-    </div>
-    <div class="feature-card">
-        <div class="feature-icon">🌐</div>
-        <h3>RTL Support</h3>
-        <p>Full bidirectional text support for Arabic, Hebrew, and more</p>
-    </div>
-    <div class="feature-card">
-        <div class="feature-icon">♿</div>
-        <h3>Accessible</h3>
-        <p>ARIA live regions and reduced motion support</p>
-    </div>
-</div>
-
-<section class="demo-section" id="installation">
+<section class="demo-section">
     <h2>Installation</h2>
-    <p>Get started with BlazorFastTypewriter in minutes:</p>
     
     <CodeSample>
         <pre><code>dotnet add package BlazorFastTypewriter</code></pre>
     </CodeSample>
     
-    <p>Then add the namespace to your <code>_Imports.razor</code>:</p>
+    <p style="margin-top: 1rem;">Add the namespace to your <code>_Imports.razor</code>:</p>
     
     <CodeSample>
         <pre><code>@using BlazorFastTypewriter</code></pre>
@@ -90,28 +34,37 @@
 </section>
 
 <section class="demo-section">
-    <h2>Quick Start</h2>
-    <p>Get started with a simple typewriter animation. The component automatically starts when the page loads.</p>
+    <h2>Basic Usage</h2>
     
-    <div class="demo-container">
-        <div class="demo-preview">
-            <Typewriter @ref="_basicTypewriter"
-                        Autostart="false"
-                        Speed="60"
-                        OnComplete="HandleBasicComplete">
-                <p>This is a <strong>simple example</strong> of the typewriter component. It types character by character, preserving <em>formatting</em> and <a href="#">links</a>.</p>
-            </Typewriter>
-        </div>
-        
-        <div class="demo-controls">
-            <button @onclick="StartBasic" disabled="@(_basicRunning)">Start</button>
-            <button @onclick="ResetBasic">Reset</button>
-        </div>
+    <div class="demo-box">
+        <Typewriter @ref="_basicTypewriter"
+                    Autostart="false"
+                    Speed="60">
+            <p>Click the Start button to begin the animation!</p>
+        </Typewriter>
+    </div>
+    
+    <div class="controls">
+        <button @onclick="StartBasic" disabled="@(_basicRunning)">Start</button>
+        <button @onclick="ResetBasic">Reset</button>
     </div>
     
     <CodeSample>
         <pre><code>&lt;Typewriter Speed="60" Autostart="false"&gt;
-    &lt;p&gt;This is a &lt;strong&gt;simple example&lt;/strong&gt; of the typewriter component.&lt;/p&gt;
+    &lt;p&gt;Click the Start button to begin the animation!&lt;/p&gt;
 &lt;/Typewriter&gt;</code></pre>
     </CodeSample>
+</section>
+
+<section class="demo-section features">
+    <h2>Features</h2>
+    <ul>
+        <li><strong>High Performance</strong> — Optimized with modern .NET 10 features</li>
+        <li><strong>HTML Support</strong> — Preserves tags, links, and nested structures</li>
+        <li><strong>Seek & Scrubbing</strong> — Jump to any position in the animation</li>
+        <li><strong>Playback Controls</strong> — Pause, resume, and track progress</li>
+        <li><strong>RTL Support</strong> — Full bidirectional text support</li>
+        <li><strong>Accessible</strong> — ARIA live regions and reduced motion support</li>
+    </ul>
+    <p style="margin-top: 1.5rem;">Explore the demos in the sidebar to see all features in action.</p>
 </section>
