@@ -1,0 +1,146 @@
+@namespace BlazorFastTypewriter.Demo.Components
+
+<div class="typewriter-player @(Overlay ? "overlay" : "")">
+    @if (ShowProgress && Progress != null)
+    {
+        <div class="player-progress">
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: @(Progress.Percent)%"></div>
+                @if (SeekEnabled)
+                {
+                    <input type="range" 
+                           class="progress-scrubber" 
+                           min="0" 
+                           max="100" 
+                           step="0.1" 
+                           value="@(Progress.Percent)"
+                           @oninput="HandleSeek" />
+                }
+            </div>
+            <div class="progress-time">
+                <span>@Progress.Current / @Progress.Total chars</span>
+                <span>@Progress.Percent.ToString("F1")%</span>
+            </div>
+        </div>
+    }
+    
+    <div class="player-controls">
+        @if (ShowPlayPause)
+        {
+            @if (!IsRunning || IsPaused)
+            {
+                <button class="control-btn play-btn" @onclick="OnPlayClick" disabled="@(!CanPlay)" title="Play">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8 5v14l11-7z"/>
+                    </svg>
+                </button>
+            }
+            else
+            {
+                <button class="control-btn pause-btn" @onclick="OnPauseClick" disabled="@(!CanPause)" title="Pause">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+                    </svg>
+                </button>
+            }
+        }
+        
+        @if (ShowStop)
+        {
+            <button class="control-btn stop-btn" @onclick="OnStopClick" disabled="@(!CanStop)" title="Stop">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <rect x="6" y="6" width="12" height="12"/>
+                </svg>
+            </button>
+        }
+        
+        @if (ShowSkipEnd)
+        {
+            <button class="control-btn skip-btn" @onclick="OnSkipEndClick" disabled="@(!CanSkipEnd)" title="Skip to End">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M6 4l10 8-10 8V4zm12 0h2v16h-2V4z"/>
+                </svg>
+            </button>
+        }
+        
+        @if (ShowReset)
+        {
+            <button class="control-btn reset-btn" @onclick="OnResetClick" disabled="@(!CanReset)" title="Reset">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/>
+                </svg>
+            </button>
+        }
+        
+        @if (ShowSpeed)
+        {
+            <div class="speed-control">
+                <label title="Speed">
+                    <svg viewBox="0 0 24 24" fill="currentColor" class="speed-icon">
+                        <path d="M20.38 8.57l-1.23 1.85a8 8 0 0 1-.22 7.58H5.07A8 8 0 0 1 15.58 6.85l1.85-1.23A10 10 0 0 0 3.35 19a2 2 0 0 0 1.72 1h13.85a2 2 0 0 0 1.74-1 10 10 0 0 0-.27-10.44z"/>
+                        <path d="M10.59 15.41a2 2 0 0 0 2.83 0l5.66-8.49-8.49 5.66a2 2 0 0 0 0 2.83z"/>
+                    </svg>
+                    <input type="range" 
+                           class="speed-slider" 
+                           min="@SpeedMin" 
+                           max="@SpeedMax" 
+                           step="@SpeedStep" 
+                           value="@CurrentSpeed"
+                           @onchange="HandleSpeedChange" />
+                    <span class="speed-value">@CurrentSpeed</span>
+                </label>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public bool Overlay { get; set; } = true;
+    [Parameter] public bool ShowProgress { get; set; } = true;
+    [Parameter] public bool ShowPlayPause { get; set; } = true;
+    [Parameter] public bool ShowStop { get; set; } = false;
+    [Parameter] public bool ShowSkipEnd { get; set; } = false;
+    [Parameter] public bool ShowReset { get; set; } = true;
+    [Parameter] public bool ShowSpeed { get; set; } = false;
+    [Parameter] public bool SeekEnabled { get; set; } = false;
+    
+    [Parameter] public bool IsRunning { get; set; }
+    [Parameter] public bool IsPaused { get; set; }
+    [Parameter] public TypewriterProgressInfo? Progress { get; set; }
+    
+    [Parameter] public bool CanPlay { get; set; } = true;
+    [Parameter] public bool CanPause { get; set; } = true;
+    [Parameter] public bool CanStop { get; set; } = true;
+    [Parameter] public bool CanSkipEnd { get; set; } = true;
+    [Parameter] public bool CanReset { get; set; } = true;
+    
+    [Parameter] public EventCallback OnPlayClick { get; set; }
+    [Parameter] public EventCallback OnPauseClick { get; set; }
+    [Parameter] public EventCallback OnStopClick { get; set; }
+    [Parameter] public EventCallback OnSkipEndClick { get; set; }
+    [Parameter] public EventCallback OnResetClick { get; set; }
+    
+    [Parameter] public int SpeedMin { get; set; } = 20;
+    [Parameter] public int SpeedMax { get; set; } = 200;
+    [Parameter] public int SpeedStep { get; set; } = 10;
+    [Parameter] public int CurrentSpeed { get; set; } = 100;
+    [Parameter] public EventCallback<int> OnSpeedChange { get; set; }
+    [Parameter] public EventCallback<double> OnSeekChange { get; set; }
+    
+    private async Task HandleSpeedChange(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var speed))
+        {
+            CurrentSpeed = speed;
+            await OnSpeedChange.InvokeAsync(speed);
+        }
+    }
+    
+    private async Task HandleSeek(ChangeEventArgs e)
+    {
+        if (double.TryParse(e.Value?.ToString(), out var percent))
+        {
+            await OnSeekChange.InvokeAsync(percent);
+        }
+    }
+}
