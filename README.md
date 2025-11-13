@@ -7,6 +7,10 @@ Blazor Fast Typewriter is a high-performance typewriter component for Blazor tha
 
 > **Why another typewriter?** Because shipping to WebAssembly or native ahead-of-time targets demands components that are deterministic, trimming safe, and optimized from the first render. Blazor Fast Typewriter was built from the ground up with those goals in mind, using modern .NET 10 features like `ImmutableArray.Builder`, collection expressions, and pattern matching for maximum performance.
 
+![Sample 1](https://github.com/Zettersten/BlazorFastTypewriter/blob/main/sample-1.gif?raw=true)
+![Sample 2](https://github.com/Zettersten/BlazorFastTypewriter/blob/main/sample-2.gif?raw=true)
+![Sample 3](https://github.com/Zettersten/BlazorFastTypewriter/blob/main/sample-3.gif?raw=true)
+
 ## Live Demo
 
 🚀 **[View the interactive demo](https://zettersten.github.io/BlazorFastTypewriter/)**
