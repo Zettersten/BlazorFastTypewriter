@@ -140,6 +140,20 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
   /// </summary>
   public bool IsPaused => _isPaused;
 
+  /// <summary>
+  /// Determines whether to show ChildContent fallback.
+  /// Hides content when Autostart is enabled and component hasn't initialized yet to prevent flash.
+  /// </summary>
+  private bool ShouldShowChildContent()
+  {
+    // If Autostart is true and component not initialized, hide content to prevent flash
+    if (Autostart && !_isInitialized)
+      return false;
+
+    // Otherwise, show ChildContent when CurrentContent is not available
+    return true;
+  }
+
   protected override void OnInitialized()
   {
     _originalContent = ChildContent;
