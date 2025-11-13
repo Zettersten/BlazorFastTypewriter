@@ -2,13 +2,15 @@ namespace BlazorFastTypewriter;
 
 /// <summary>
 /// Event arguments for progress events.
+/// Optimized as readonly record struct for zero allocations.
 /// </summary>
-public sealed record TypewriterProgressEventArgs(int Current, int Total, double Percent);
+public readonly record struct TypewriterProgressEventArgs(int Current, int Total, double Percent);
 
 /// <summary>
 /// Event arguments for seek events.
+/// Optimized as readonly record struct for zero allocations.
 /// </summary>
-public sealed record TypewriterSeekEventArgs(
+public readonly record struct TypewriterSeekEventArgs(
   double Position,
   int TargetChar,
   int TotalChars,
@@ -21,8 +23,9 @@ public sealed record TypewriterSeekEventArgs(
 
 /// <summary>
 /// Progress information returned by GetProgress().
+/// Optimized as readonly record struct for zero allocations.
 /// </summary>
-public sealed record TypewriterProgressInfo(
+public readonly record struct TypewriterProgressInfo(
   int Current,
   int Total,
   double Percent,

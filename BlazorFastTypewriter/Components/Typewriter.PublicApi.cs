@@ -21,15 +21,12 @@ public partial class Typewriter
     // Do this BEFORE acquiring lock to avoid lock issues
     if (_isRunning && _isPaused)
     {
-      await Resume();
+      await Resume().ConfigureAwait(false);
       return;
     }
 
     // Thread-safe lock to prevent multiple simultaneous starts
-    if (!await _animationLock.WaitAsync(0))
-      return; // Another operation in progress
-
-    try
+    lock (_animationLock)
     {
       // If already running and not paused, don't restart
       if (_isRunning)
@@ -41,114 +38,111 @@ public partial class Typewriter
       _isPaused = false;
 
       // Capture original content if not already set
-      if (_originalContent is null)
+      _originalContent ??= ChildContent;
+    }
+
+    // Extract DOM structure using JS interop
+    if (_jsModule is not null && _isInitialized)
+    {
+      try
       {
-        _originalContent = ChildContent;
+        // Ensure content is rendered so we can extract it
+        await InvokeAsync(StateHasChanged).ConfigureAwait(false);
+        await Task.Delay(100).ConfigureAwait(false); // Allow DOM to update and render
+
+        var structure = await _jsModule.InvokeAsync<DomStructure>(
+          "extractStructure",
+          [_containerId]
+        ).ConfigureAwait(false);
+
+        _operations = _domParser.ParseDomStructure(structure);
+        _totalChars = _operations.Count(static op => op.Type == OperationType.Char);
+      }
+      catch (Exception)
+      {
+        // Fallback: Create simple text-based operations without DOM parsing
+        _operations = [];
+        _totalChars = 0;
       }
 
-      // Extract DOM structure using JS interop
-      if (_jsModule is not null && _isInitialized)
+      // If operations are still empty after parsing, skip animation and just show content
+      if (_operations.Length == 0)
+      {
+        // No valid operations - just show the content immediately
+        _isRunning = true;
+        await OnStart.InvokeAsync().ConfigureAwait(false);
+        _isRunning = false;
+        CurrentContent = _originalContent;
+        await InvokeAsync(StateHasChanged).ConfigureAwait(false);
+        await OnComplete.InvokeAsync().ConfigureAwait(false);
+        return;
+      }
+    }
+    else
+    {
+      // No JS available - skip animation and show content
+      CurrentContent = _originalContent;
+      await InvokeAsync(StateHasChanged).ConfigureAwait(false);
+      await OnStart.InvokeAsync().ConfigureAwait(false);
+      return;
+    }
+
+    if (_prefersReducedMotion)
+    {
+      _isRunning = true;
+      await OnStart.InvokeAsync().ConfigureAwait(false);
+      _isRunning = false;
+      CurrentContent = _originalContent;
+      await InvokeAsync(StateHasChanged).ConfigureAwait(false);
+      await OnComplete.InvokeAsync().ConfigureAwait(false);
+      return;
+    }
+
+    var gen = _generation;
+    _isRunning = true;
+    _cancellationTokenSource?.Cancel();
+    _cancellationTokenSource?.Dispose();
+    _cancellationTokenSource = new CancellationTokenSource();
+    var ct = _cancellationTokenSource.Token;
+
+    await OnStart.InvokeAsync().ConfigureAwait(false);
+
+    // Clear content to start animation
+    CurrentContent = null;
+    await InvokeAsync(StateHasChanged).ConfigureAwait(false);
+
+    var duration = Math.Max(
+      MinDuration,
+      Math.Min(MaxDuration, (int)Math.Round((_totalChars / (double)Speed) * 1000))
+    );
+    var delay = _totalChars > 0 ? Math.Max(8, duration / _totalChars) : 0;
+
+    // Run animation in background with error handling
+    _ = Task.Run(
+      async () =>
       {
         try
         {
-          // Ensure content is rendered so we can extract it
-          await InvokeAsync(StateHasChanged);
-          await Task.Delay(100); // Allow DOM to update and render
-
-          var structure = await _jsModule.InvokeAsync<DomStructure>(
-            "extractStructure",
-            [_containerId]
-          );
-
-          _operations = _domParser.ParseDomStructure(structure);
-          _totalChars = _operations.Count(static op => op.Type == OperationType.Char);
+          await AnimateAsync(gen, delay, _totalChars, ct).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+          // Task was cancelled, this is expected - do nothing
         }
         catch (Exception)
         {
-          // Fallback: Create simple text-based operations without DOM parsing
-          _operations = [];
-          _totalChars = 0;
-        }
-
-        // If operations are still empty after parsing, skip animation and just show content
-        if (_operations.Length == 0)
-        {
-          // No valid operations - just show the content immediately
-          _isRunning = true;
-          await OnStart.InvokeAsync();
+          // On error, ensure content is restored
           _isRunning = false;
-          CurrentContent = _originalContent;
-          await InvokeAsync(StateHasChanged);
-          await OnComplete.InvokeAsync();
-          return;
+          await InvokeAsync(() =>
+          {
+            CurrentContent = _originalContent;
+            StateHasChanged();
+          }).ConfigureAwait(false);
+          await OnComplete.InvokeAsync().ConfigureAwait(false);
         }
-      }
-      else
-      {
-        // No JS available - skip animation and show content
-        CurrentContent = _originalContent;
-        await InvokeAsync(StateHasChanged);
-        await OnStart.InvokeAsync();
-        return;
-      }
-
-      if (_prefersReducedMotion)
-      {
-        _isRunning = true;
-        await OnStart.InvokeAsync();
-        _isRunning = false;
-        CurrentContent = _originalContent;
-        await InvokeAsync(StateHasChanged);
-        await OnComplete.InvokeAsync();
-        return;
-      }
-
-      var gen = _generation;
-      _isRunning = true;
-      _cancellationTokenSource?.Cancel();
-      _cancellationTokenSource?.Dispose();
-      _cancellationTokenSource = new CancellationTokenSource();
-      var ct = _cancellationTokenSource.Token;
-
-      await OnStart.InvokeAsync();
-
-      // Clear content to start animation
-      CurrentContent = null;
-      await InvokeAsync(StateHasChanged);
-
-      var duration = Math.Max(
-        MinDuration,
-        Math.Min(MaxDuration, (int)Math.Round((_totalChars / (double)Speed) * 1000))
-      );
-      var delay = _totalChars > 0 ? Math.Max(8, duration / _totalChars) : 0;
-
-      // Run animation in background with error handling
-      _ = Task.Run(
-        async () =>
-        {
-          try
-          {
-            await AnimateAsync(gen, delay, _totalChars, ct);
-          }
-          catch (Exception)
-          {
-            // On error, ensure content is restored
-            _isRunning = false;
-            await InvokeAsync(() =>
-            {
-              CurrentContent = _originalContent;
-              StateHasChanged();
-            });
-            await OnComplete.InvokeAsync();
-          }
-        },
-        ct
-      );
-    }
-    finally
-    {
-      _animationLock.Release();
-    }
+      },
+      ct
+    );
   }
 
   /// <summary>
@@ -160,19 +154,16 @@ public partial class Typewriter
       return;
 
     // Thread-safe lock for pause operation
-    if (!await _animationLock.WaitAsync(0))
-      return; // Another operation in progress
+    lock (_animationLock)
+    {
+      if (_isPaused) // Double-check after acquiring lock
+        return;
 
-    try
-    {
       _isPaused = true;
-      await OnPause.InvokeAsync();
-      await InvokeAsync(StateHasChanged);
     }
-    finally
-    {
-      _animationLock.Release();
-    }
+
+    await OnPause.InvokeAsync().ConfigureAwait(false);
+    await InvokeAsync(StateHasChanged).ConfigureAwait(false);
   }
 
   /// <summary>
@@ -183,66 +174,65 @@ public partial class Typewriter
     if (!_isPaused || !_isRunning)
       return;
 
-    // Thread-safe lock to prevent race conditions
-    if (!await _animationLock.WaitAsync(0))
-      return; // Another operation in progress
+    int gen;
+    CancellationToken ct;
 
-    try
+    // Thread-safe lock to prevent race conditions
+    lock (_animationLock)
     {
+      if (!_isPaused || !_isRunning) // Double-check after acquiring lock
+        return;
+
       // Increment generation to invalidate any old paused tasks
       _generation++;
-      var gen = _generation;
+      gen = _generation;
 
       // Cancel and recreate cancellation token to stop old tasks immediately
       _cancellationTokenSource?.Cancel();
       _cancellationTokenSource?.Dispose();
       _cancellationTokenSource = new CancellationTokenSource();
-      var ct = _cancellationTokenSource.Token;
+      ct = _cancellationTokenSource.Token;
 
       // Now set isPaused to false AFTER cancelling old tasks
       _isPaused = false;
+    }
 
-      await OnResume.InvokeAsync();
-      await InvokeAsync(StateHasChanged);
+    await OnResume.InvokeAsync().ConfigureAwait(false);
+    await InvokeAsync(StateHasChanged).ConfigureAwait(false);
 
-      // Start animation task from current position (handles seek scenario)
-      var duration = Math.Max(
-        MinDuration,
-        Math.Min(MaxDuration, (int)Math.Round((_totalChars / (double)Speed) * 1000))
-      );
-      var delay = _totalChars > 0 ? Math.Max(8, duration / _totalChars) : 0;
+    // Start animation task from current position (handles seek scenario)
+    var duration = Math.Max(
+      MinDuration,
+      Math.Min(MaxDuration, (int)Math.Round((_totalChars / (double)Speed) * 1000))
+    );
+    var delay = _totalChars > 0 ? Math.Max(8, duration / _totalChars) : 0;
 
-      // Run animation with error handling
-      _ = Task.Run(
-        async () =>
+    // Run animation with error handling
+    _ = Task.Run(
+      async () =>
+      {
+        try
         {
-          try
+          await AnimateAsync(gen, delay, _totalChars, ct).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+          // Task was cancelled, this is expected - do nothing
+        }
+        catch (Exception)
+        {
+          // On unexpected error, ensure content is restored
+          _isRunning = false;
+          await InvokeAsync(() =>
           {
-            await AnimateAsync(gen, delay, _totalChars, ct);
-          }
-          catch (OperationCanceledException)
-          {
-            // Task was cancelled, this is expected - do nothing
-          }
-          catch (Exception)
-          {
-            // On unexpected error, ensure content is restored
-            _isRunning = false;
-            await InvokeAsync(() =>
-            {
-              CurrentContent = _originalContent;
-              StateHasChanged();
-            });
-            await OnComplete.InvokeAsync();
-          }
-        },
-        ct
-      );
-    }
-    finally
-    {
-      _animationLock.Release();
-    }
+            CurrentContent = _originalContent;
+            StateHasChanged();
+          }).ConfigureAwait(false);
+          await OnComplete.InvokeAsync().ConfigureAwait(false);
+        }
+      },
+      ct
+    );
   }
 
   /// <summary>
@@ -262,8 +252,8 @@ public partial class Typewriter
     CurrentContent = _originalContent;
     _cancellationTokenSource?.Cancel();
 
-    await InvokeAsync(StateHasChanged);
-    await OnComplete.InvokeAsync();
+    await InvokeAsync(StateHasChanged).ConfigureAwait(false);
+    await OnComplete.InvokeAsync().ConfigureAwait(false);
   }
 
   /// <summary>
@@ -281,9 +271,9 @@ public partial class Typewriter
     CurrentContent = null;
     _cancellationTokenSource?.Cancel();
 
-    await InvokeAsync(StateHasChanged);
-    await OnProgress.InvokeAsync(new TypewriterProgressEventArgs(0, 0, 0));
-    await OnReset.InvokeAsync();
+    await InvokeAsync(StateHasChanged).ConfigureAwait(false);
+    await OnProgress.InvokeAsync(new TypewriterProgressEventArgs(0, 0, 0)).ConfigureAwait(false);
+    await OnReset.InvokeAsync().ConfigureAwait(false);
   }
 
   /// <summary>
@@ -293,7 +283,7 @@ public partial class Typewriter
   {
     ChildContent = newContent;
     _originalContent = newContent;
-    await Reset();
+    await Reset().ConfigureAwait(false);
   }
 
   /// <summary>
@@ -303,7 +293,7 @@ public partial class Typewriter
   {
     ChildContent = builder => builder.AddMarkupContent(0, html);
     _originalContent = ChildContent;
-    await Reset();
+    await Reset().ConfigureAwait(false);
   }
 
   /// <summary>
@@ -318,11 +308,11 @@ public partial class Typewriter
     // Ensure operations are built
     if (_operations.Length == 0)
     {
-      await RebuildFromOriginal();
+      await RebuildFromOriginal().ConfigureAwait(false);
     }
 
     // Normalize position
-    var normalizedPosition = Math.Max(0, Math.Min(1, position));
+    var normalizedPosition = Math.Clamp(position, 0, 1);
 
     // Remember if animation was running
     var wasRunning = _isRunning && !_isPaused;
@@ -350,7 +340,7 @@ public partial class Typewriter
     var targetChar = (int)(normalizedPosition * _totalChars);
 
     // Build DOM to target - now safe as old tasks are cancelled
-    await BuildDOMToIndex(targetChar);
+    await BuildDOMToIndex(targetChar).ConfigureAwait(false);
 
     // Handle edge cases based on normalized position (not current char count)
     var atStart = normalizedPosition == 0;
@@ -374,7 +364,7 @@ public partial class Typewriter
         AtStart: atStart,
         AtEnd: atEnd
       )
-    );
+    ).ConfigureAwait(false);
 
     // Fire progress event
     await OnProgress.InvokeAsync(
@@ -383,12 +373,12 @@ public partial class Typewriter
         _totalChars,
         _totalChars > 0 ? (_currentCharCount / (double)_totalChars) * 100 : 0
       )
-    );
+    ).ConfigureAwait(false);
 
     // If at end, fire complete event
     if (atEnd)
     {
-      await OnComplete.InvokeAsync();
+      await OnComplete.InvokeAsync().ConfigureAwait(false);
     }
   }
 
@@ -396,33 +386,24 @@ public partial class Typewriter
   /// Seeks to a specific percentage (0 to 100).
   /// </summary>
   /// <param name="percent">Percentage from 0 to 100.</param>
-  public async Task SeekToPercent(double percent)
-  {
-    await Seek(percent / 100);
-  }
+  public Task SeekToPercent(double percent) => Seek(percent / 100);
 
   /// <summary>
   /// Seeks to a specific character index.
   /// </summary>
   /// <param name="charIndex">Character index to seek to.</param>
-  public async Task SeekToChar(int charIndex)
-  {
-    if (_totalChars == 0)
-      return;
-    await Seek(charIndex / (double)_totalChars);
-  }
+  public Task SeekToChar(int charIndex) =>
+    _totalChars == 0 ? Task.CompletedTask : Seek(charIndex / (double)_totalChars);
 
   /// <summary>
   /// Gets the current progress information.
   /// </summary>
   /// <returns>Current progress state.</returns>
-  public TypewriterProgressInfo GetProgress()
-  {
-    return new TypewriterProgressInfo(
+  public TypewriterProgressInfo GetProgress() =>
+    new(
       Current: _currentCharCount,
       Total: _totalChars,
       Percent: _totalChars > 0 ? (_currentCharCount / (double)_totalChars) * 100 : 0,
       Position: _totalChars > 0 ? _currentCharCount / (double)_totalChars : 0
     );
-  }
 }

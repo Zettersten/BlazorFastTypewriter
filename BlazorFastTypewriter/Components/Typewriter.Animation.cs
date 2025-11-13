@@ -22,10 +22,11 @@ public partial class Typewriter
     {
       // Ensure content is rendered
       CurrentContent = _originalContent;
-      await InvokeAsync(StateHasChanged);
-      await Task.Delay(100);
+      await InvokeAsync(StateHasChanged).ConfigureAwait(false);
+      await Task.Delay(100).ConfigureAwait(false);
 
-      var structure = await _jsModule.InvokeAsync<DomStructure>("extractStructure", [_containerId]);
+      var structure = await _jsModule.InvokeAsync<DomStructure>("extractStructure", [_containerId])
+        .ConfigureAwait(false);
 
       if (structure is not null)
       {
@@ -52,13 +53,14 @@ public partial class Typewriter
     if (targetChar <= 0)
     {
       // Set to empty content instead of null to avoid showing ChildContent fallback
-      CurrentContent = builder => { };
-      await InvokeAsync(StateHasChanged);
+      CurrentContent = static builder => { };
+      await InvokeAsync(StateHasChanged).ConfigureAwait(false);
       return;
     }
 
     // Build HTML up to target character
-    var currentHtml = new StringBuilder(1024);
+    using var pooledBuilder = new PooledStringBuilder(1024);
+    var currentHtml = pooledBuilder.Builder;
     var charCount = 0;
 
     for (var i = 0; i < _operations.Length; i++)
@@ -73,7 +75,10 @@ public partial class Typewriter
 
         case OperationType.Char:
           if (charCount >= targetChar)
-            goto Done;
+          {
+            _currentIndex = i;
+            goto BuildComplete;
+          }
           currentHtml.Append(op.Char);
           charCount++;
           break;
@@ -86,7 +91,7 @@ public partial class Typewriter
       _currentIndex = i + 1;
     }
 
-    Done:
+    BuildComplete:
     _currentCharCount = charCount;
 
     // Update content
@@ -95,7 +100,7 @@ public partial class Typewriter
     {
       CurrentContent = builder => builder.AddMarkupContent(0, html);
       StateHasChanged();
-    });
+    }).ConfigureAwait(false);
   }
 
   /// <summary>
@@ -108,7 +113,8 @@ public partial class Typewriter
     CancellationToken cancellationToken
   )
   {
-    var currentHtml = new StringBuilder(1024);
+    using var pooledBuilder = new PooledStringBuilder(1024);
+    var currentHtml = pooledBuilder.Builder;
 
     // Rebuild existing content up to current index (for resume support)
     for (var i = 0; i < _currentIndex; i++)
@@ -137,7 +143,7 @@ public partial class Typewriter
       {
         _currentIndex = i;
         // Use a longer delay when paused to reduce CPU usage
-        await Task.Delay(100, cancellationToken);
+        await Task.Delay(100, cancellationToken).ConfigureAwait(false);
         i--; // Retry same index
         continue;
       }
@@ -168,7 +174,7 @@ public partial class Typewriter
       {
         CurrentContent = builder => builder.AddMarkupContent(0, html);
         StateHasChanged();
-      });
+      }).ConfigureAwait(false);
 
       if (op.Type == OperationType.Char && _currentCharCount % 10 == 0 && totalChars > 0)
       {
@@ -178,7 +184,7 @@ public partial class Typewriter
             totalChars,
             (_currentCharCount / (double)totalChars) * 100
           )
-        );
+        ).ConfigureAwait(false);
       }
 
       if (op.Type == OperationType.Char)
@@ -186,7 +192,7 @@ public partial class Typewriter
         var itemDelay = baseDelay + Random.Shared.Next(0, 6);
         if (itemDelay > 0)
         {
-          await Task.Delay(itemDelay, cancellationToken);
+          await Task.Delay(itemDelay, cancellationToken).ConfigureAwait(false);
         }
       }
     }
@@ -197,13 +203,31 @@ public partial class Typewriter
     // Always fire final progress event at 100%
     await OnProgress.InvokeAsync(
       new TypewriterProgressEventArgs(totalChars, totalChars, 100.0)
-    );
+    ).ConfigureAwait(false);
     
     await InvokeAsync(() =>
     {
       CurrentContent = _originalContent;
       StateHasChanged();
-    });
-    await OnComplete.InvokeAsync();
+    }).ConfigureAwait(false);
+    await OnComplete.InvokeAsync().ConfigureAwait(false);
+  }
+
+  /// <summary>
+  /// Struct for pooling StringBuilder instances to reduce allocations.
+  /// </summary>
+  private readonly ref struct PooledStringBuilder
+  {
+    public StringBuilder Builder { get; }
+
+    public PooledStringBuilder(int capacity)
+    {
+      Builder = new StringBuilder(capacity);
+    }
+
+    public void Dispose()
+    {
+      Builder.Clear();
+    }
   }
 }
