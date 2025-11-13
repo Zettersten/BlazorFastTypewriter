@@ -58,9 +58,8 @@ public partial class Typewriter
       return;
     }
 
-    // Build HTML up to target character
-    using var pooledBuilder = new PooledStringBuilder(1024);
-    var currentHtml = pooledBuilder.Builder;
+    // Build HTML up to target character - pre-allocate capacity
+    var currentHtml = new StringBuilder(capacity: 1024);
     var charCount = 0;
 
     for (var i = 0; i < _operations.Length; i++)
@@ -113,8 +112,8 @@ public partial class Typewriter
     CancellationToken cancellationToken
   )
   {
-    using var pooledBuilder = new PooledStringBuilder(1024);
-    var currentHtml = pooledBuilder.Builder;
+    // Pre-allocate StringBuilder with estimated capacity
+    var currentHtml = new StringBuilder(capacity: 1024);
 
     // Rebuild existing content up to current index (for resume support)
     for (var i = 0; i < _currentIndex; i++)
@@ -211,23 +210,5 @@ public partial class Typewriter
       StateHasChanged();
     }).ConfigureAwait(false);
     await OnComplete.InvokeAsync().ConfigureAwait(false);
-  }
-
-  /// <summary>
-  /// Struct for pooling StringBuilder instances to reduce allocations.
-  /// </summary>
-  private readonly ref struct PooledStringBuilder
-  {
-    public StringBuilder Builder { get; }
-
-    public PooledStringBuilder(int capacity)
-    {
-      Builder = new StringBuilder(capacity);
-    }
-
-    public void Dispose()
-    {
-      Builder.Clear();
-    }
   }
 }
