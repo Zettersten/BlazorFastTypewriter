@@ -1,6 +1,7 @@
 /**
  * JavaScript module for Typewriter component.
  * Handles DOM structure extraction and reduced motion detection.
+ * Optimized for SSR, Blazor Server, and WASM compatibility.
  */
 
 /**
@@ -8,7 +9,12 @@
  * @returns {boolean} True if prefers-reduced-motion is enabled.
  */
 export function checkReducedMotion() {
-    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // SSR compatibility check
+  if (typeof window === 'undefined' || !window.matchMedia) {
+    return false;
+  }
+
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
 /**
@@ -17,65 +23,81 @@ export function checkReducedMotion() {
  * @returns {Object} The extracted DOM structure.
  */
 export function extractStructure(containerId) {
-    const element = document.querySelector(`[data-typewriter-id="${containerId}"]`);
-    
-    if (!element || !(element instanceof HTMLElement)) {
-        return { nodes: [] };
-    }
+  // SSR compatibility check
+  if (typeof document === 'undefined') {
+    return { nodes: [] };
+  }
 
-    /**
-     * Recursively processes a DOM node and converts it to our structure format.
-     * @param {Node} node - The DOM node to process.
-     * @returns {Object|null} The processed node structure or null if skipped.
-     */
-    function processNode(node) {
-        if (node.nodeType === Node.TEXT_NODE) {
-            const text = node.textContent;
-            if (!text || !/\S/.test(text)) {
-                return null; // Skip whitespace-only text nodes
-            }
-            return {
-                type: 'text',
-                text: text
-            };
-        }
+  const element = document.querySelector(`[data-typewriter-id="${containerId}"]`);
 
-        if (node.nodeType === Node.ELEMENT_NODE) {
-            const element = /** @type {Element} */ (node);
-            const tagName = element.tagName.toLowerCase();
-            const attributes = {};
-            
-            // Extract attributes
-            for (const attr of element.attributes) {
-                attributes[attr.name] = attr.value;
-            }
+  if (!element || !(element instanceof HTMLElement)) {
+    return { nodes: [] };
+  }
 
-            const children = [];
-            for (const child of element.childNodes) {
-                const processed = processNode(child);
-                if (processed !== null) {
-                    children.push(processed);
-                }
-            }
+  /**
+   * Recursively processes a DOM node and converts it to our structure format.
+   * Uses modern JS patterns and optimizations.
+   * @param {Node} node - The DOM node to process.
+   * @returns {Object|null} The processed node structure or null if skipped.
+   */
+  const processNode = (node) => {
+    // Fast path: text nodes
+    if (node.nodeType === Node.TEXT_NODE) {
+      const text = node.textContent;
 
-            return {
-                type: 'element',
-                tagName: tagName,
-                attributes: attributes,
-                children: children.length > 0 ? children : undefined
-            };
-        }
-
+      // Skip empty or whitespace-only text nodes using regex test
+      if (!text || !/\S/.test(text)) {
         return null;
+      }
+
+      return {
+        type: 'text',
+        text
+      };
     }
 
-    const nodes = [];
-    for (const child of element.childNodes) {
-        const processed = processNode(child);
-        if (processed !== null) {
-            nodes.push(processed);
-        }
+    // Fast path: element nodes
+    if (node.nodeType === Node.ELEMENT_NODE) {
+      const element = /** @type {Element} */ (node);
+      const tagName = element.tagName.toLowerCase();
+
+      // Use Object.create(null) for better performance (no prototype chain)
+      const attributes = Object.create(null);
+
+      // Modern iteration over attributes
+      for (const { name, value } of element.attributes) {
+        attributes[name] = value;
+      }
+
+      // Process children recursively with filter to remove nulls
+      const children = Array.from(element.childNodes)
+        .map(processNode)
+        .filter(Boolean);
+
+      return {
+        type: 'element',
+        tagName,
+        attributes: Object.keys(attributes).length > 0 ? attributes : undefined,
+        children: children.length > 0 ? children : undefined
+      };
     }
 
-    return { nodes: nodes };
+    return null;
+  };
+
+  // Process all child nodes and filter out nulls
+  const nodes = Array.from(element.childNodes)
+    .map(processNode)
+    .filter(Boolean);
+
+  return { nodes };
+}
+
+/**
+ * Disposes any resources held by this module.
+ * Called when the component is disposed.
+ */
+export function dispose() {
+  // No resources to dispose in current implementation
+  // This is here for future extensibility and best practices
 }

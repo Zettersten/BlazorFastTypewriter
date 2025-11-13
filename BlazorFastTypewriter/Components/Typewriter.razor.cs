@@ -11,10 +11,12 @@ namespace BlazorFastTypewriter;
 /// </summary>
 public partial class Typewriter : ComponentBase, IAsyncDisposable
 {
-  // Private fields
+  // Private fields - optimized with modern patterns
   private int _generation;
+
   private bool _isPaused;
   private bool _isRunning;
+  private bool _isExtracting; // Flag to track DOM extraction phase
   private int _currentIndex;
   private int _totalChars;
   private int _currentCharCount;
@@ -25,8 +27,8 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
   private IJSObjectReference? _jsModule;
   private bool _prefersReducedMotion;
   private bool _isInitialized;
-  private readonly string _containerId = Guid.NewGuid().ToString("N")[..8];
-  private readonly SemaphoreSlim _animationLock = new(1, 1);
+  private readonly string _containerId = Guid.CreateVersion7().ToString("N")[..8];
+  private readonly Lock _animationLock = new();
   private readonly DomParsingService _domParser = new();
 
   /// <summary>
@@ -144,65 +146,88 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
   /// Determines whether to show ChildContent fallback.
   /// Hides content when Autostart is enabled and component hasn't initialized yet to prevent flash.
   /// </summary>
-  private bool ShouldShowChildContent()
-  {
-    // If Autostart is true and component not initialized, hide content to prevent flash
-    if (Autostart && !_isInitialized)
-      return false;
+  private bool ShouldShowChildContent() => CurrentContent is null && (!Autostart || _isInitialized);
 
-    // Otherwise, show ChildContent when CurrentContent is not available
-    return true;
+  /// <summary>
+  /// Gets visibility style to hide content flash before animation.
+  /// </summary>
+  private string GetVisibilityStyle()
+  {
+    // Hide content in these scenarios:
+    // 1. During extraction phase
+    // 2. When running but content hasn't started animating
+    // 3. When Autostart is enabled but not yet initialized (prevents initial flash)
+    if (_isExtracting || 
+        (_isRunning && CurrentContent is null) ||
+        (Autostart && !_isInitialized))
+      return "visibility: hidden;";
+    
+    return string.Empty;
   }
 
   protected override void OnInitialized()
   {
     _originalContent = ChildContent;
-    // Always set CurrentContent initially so there's something to display
-    // If autostart is enabled, it will be replaced when animation starts
-    if (ChildContent is not null)
+    // For Autostart, hide content until animation begins
+    // For manual start, show content immediately
+    CurrentContent = Autostart ? null : ChildContent;
+  }
+
+  protected override void OnParametersSet()
+  {
+    // CRITICAL: Update _originalContent when ChildContent parameter changes
+    // This ensures dynamic content updates (like AI chat) use the correct content
+    if (ChildContent != _originalContent && !_isRunning && !_isExtracting)
     {
-      CurrentContent = ChildContent;
+      _originalContent = ChildContent;
+      // Don't update CurrentContent if Autostart - let the animation control it
+      if (!Autostart || _isInitialized)
+      {
+        CurrentContent = ChildContent;
+      }
     }
   }
 
   protected override async Task OnAfterRenderAsync(bool firstRender)
   {
-    if (firstRender)
+    if (!firstRender)
+      return;
+
+    try
     {
-      try
-      {
-        _jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>(
+      _jsModule = await JSRuntime
+        .InvokeAsync<IJSObjectReference>(
           "import",
           "./_content/BlazorFastTypewriter/Components/Typewriter.razor.js"
-        );
+        )
+        .ConfigureAwait(false);
 
-        if (RespectMotionPreference)
-        {
-          _prefersReducedMotion = await _jsModule.InvokeAsync<bool>("checkReducedMotion");
-        }
-
-        _isInitialized = true;
-
-        if (Autostart && ChildContent is not null)
-        {
-          // Small delay to ensure DOM is ready for extraction
-          await Task.Delay(100);
-          await Start();
-        }
-      }
-      catch (Exception)
+      if (RespectMotionPreference)
       {
-        // JavaScript not available (SSR scenario) or JS interop failed, show content immediately
-        _isInitialized = true;
-        if (ChildContent is not null && !Autostart)
-        {
-          CurrentContent = ChildContent;
-          StateHasChanged();
-        }
+        _prefersReducedMotion = await _jsModule
+          .InvokeAsync<bool>("checkReducedMotion")
+          .ConfigureAwait(false);
+      }
+
+      _isInitialized = true;
+
+      if (Autostart && ChildContent is not null)
+      {
+        // Small delay to ensure DOM is ready for extraction
+        await Task.Delay(100).ConfigureAwait(false);
+        await Start().ConfigureAwait(false);
       }
     }
-
-    await base.OnAfterRenderAsync(firstRender);
+    catch (Exception)
+    {
+      // JavaScript not available (SSR scenario) or JS interop failed, show content immediately
+      _isInitialized = true;
+      if (ChildContent is not null && !Autostart)
+      {
+        CurrentContent = ChildContent;
+        StateHasChanged();
+      }
+    }
   }
 
   public async ValueTask DisposeAsync()
@@ -212,7 +237,6 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
     _cancellationTokenSource?.Cancel();
     _cancellationTokenSource?.Dispose();
     _cancellationTokenSource = null;
-    _animationLock.Dispose();
 
     if (_jsModule is not null)
     {

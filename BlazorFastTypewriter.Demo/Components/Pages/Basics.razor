@@ -16,16 +16,18 @@
         <TypewriterControls 
             Overlay="false"
             IsRunning="_basicRunning"
-            IsPaused="false"
+            IsPaused="_basicPaused"
             Progress="_basicProgress"
             ShowProgress="true"
             ShowPlayPause="true"
             ShowReset="true"
             CanPlay="!_basicRunning"
-            CanPause="_basicRunning"
+            CanPause="_basicRunning && !_basicPaused"
+            CanResume="_basicPaused"
             CanReset="true"
             OnPlayClick="StartBasic"
-            OnPauseClick="StartBasic"
+            OnPauseClick="PauseBasic"
+            OnResumeClick="ResumeBasic"
             OnResetClick="ResetBasic" />
         
         <div class="demo-preview">
@@ -54,7 +56,7 @@
         <TypewriterControls 
             Overlay="false"
             IsRunning="_speedRunning"
-            IsPaused="false"
+            IsPaused="_speedPaused"
             Progress="_speedProgress"
             ShowProgress="true"
             ShowPlayPause="true"
@@ -65,10 +67,12 @@
             SpeedStep="10"
             CurrentSpeed="_speed"
             CanPlay="!_speedRunning"
-            CanPause="_speedRunning"
+            CanPause="_speedRunning && !_speedPaused"
+            CanResume="_speedPaused"
             CanReset="true"
             OnPlayClick="StartSpeed"
-            OnPauseClick="StartSpeed"
+            OnPauseClick="PauseSpeed"
+            OnResumeClick="ResumeSpeed"
             OnResetClick="ResetSpeed"
             OnSpeedChange="HandleSpeedChangeFromControls" />
         
@@ -102,16 +106,18 @@
         <TypewriterControls 
             Overlay="false"
             IsRunning="_htmlRunning"
-            IsPaused="false"
+            IsPaused="_htmlPaused"
             Progress="_htmlProgress"
             ShowProgress="true"
             ShowPlayPause="true"
             ShowReset="true"
             CanPlay="!_htmlRunning"
-            CanPause="_htmlRunning"
+            CanPause="_htmlRunning && !_htmlPaused"
+            CanResume="_htmlPaused"
             CanReset="true"
             OnPlayClick="StartHtml"
-            OnPauseClick="StartHtml"
+            OnPauseClick="PauseHtml"
+            OnResumeClick="ResumeHtml"
             OnResetClick="ResetHtml" />
         
         <div class="demo-preview">
@@ -156,16 +162,18 @@
         <TypewriterControls 
             Overlay="false"
             IsRunning="_rtlRunning"
-            IsPaused="false"
+            IsPaused="_rtlPaused"
             Progress="_rtlProgress"
             ShowProgress="true"
             ShowPlayPause="true"
             ShowReset="true"
             CanPlay="!_rtlRunning"
-            CanPause="_rtlRunning"
+            CanPause="_rtlRunning && !_rtlPaused"
+            CanResume="_rtlPaused"
             CanReset="true"
             OnPlayClick="StartRtl"
-            OnPauseClick="StartRtl"
+            OnPauseClick="PauseRtl"
+            OnResumeClick="ResumeRtl"
             OnResetClick="ResetRtl" />
         
         <div class="demo-preview">

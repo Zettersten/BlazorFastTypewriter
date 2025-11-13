@@ -45,11 +45,13 @@
             ShowStop="false"
             ShowSkipEnd="false"
             SeekEnabled="true"
-            CanPlay="!_seekRunning || _seekPaused"
+            CanPlay="!_seekRunning"
             CanPause="_seekRunning && !_seekPaused"
+            CanResume="_seekPaused"
             CanReset="true"
-            OnPlayClick="HandlePlayPause"
-            OnPauseClick="HandlePlayPause"
+            OnPlayClick="StartSeek"
+            OnPauseClick="PauseSeek"
+            OnResumeClick="ResumeSeek"
             OnResetClick="ResetSeek"
             OnSeekChange="HandleSeekFromControls" />
         

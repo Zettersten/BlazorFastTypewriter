@@ -5,7 +5,7 @@
     {
         <div class="player-progress">
             <div class="progress-bar">
-                <div class="progress-fill" style="width: @(Progress.Percent)%"></div>
+                <div class="progress-fill" style="width: @(Progress.Value.Percent)%"></div>
                 @if (SeekEnabled)
                 {
                     <input type="range" 
@@ -13,13 +13,13 @@
                            min="0" 
                            max="100" 
                            step="0.1" 
-                           value="@(Progress.Percent)"
+                           value="@(Progress.Value.Percent)"
                            @oninput="HandleSeek" />
                 }
             </div>
             <div class="progress-time">
-                <span>@Progress.Current / @Progress.Total chars</span>
-                <span>@Progress.Percent.ToString("F1")%</span>
+                <span>@Progress.Value.Current / @Progress.Value.Total chars</span>
+                <span>@Progress.Value.Percent.ToString("F1")%</span>
             </div>
         </div>
     }
@@ -27,9 +27,17 @@
     <div class="player-controls">
         @if (ShowPlayPause)
         {
-            @if (!IsRunning || IsPaused)
+            @if (!IsRunning)
             {
                 <button class="control-btn play-btn" @onclick="OnPlayClick" disabled="@(!CanPlay)" title="Play">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8 5v14l11-7z"/>
+                    </svg>
+                </button>
+            }
+            else if (IsPaused)
+            {
+                <button class="control-btn play-btn" @onclick="OnResumeClick" disabled="@(!CanResume)" title="Resume">
                     <svg viewBox="0 0 24 24" fill="currentColor">
                         <path d="M8 5v14l11-7z"/>
                     </svg>
@@ -110,12 +118,14 @@
     
     [Parameter] public bool CanPlay { get; set; } = true;
     [Parameter] public bool CanPause { get; set; } = true;
+    [Parameter] public bool CanResume { get; set; } = true;
     [Parameter] public bool CanStop { get; set; } = true;
     [Parameter] public bool CanSkipEnd { get; set; } = true;
     [Parameter] public bool CanReset { get; set; } = true;
     
     [Parameter] public EventCallback OnPlayClick { get; set; }
     [Parameter] public EventCallback OnPauseClick { get; set; }
+    [Parameter] public EventCallback OnResumeClick { get; set; }
     [Parameter] public EventCallback OnStopClick { get; set; }
     [Parameter] public EventCallback OnSkipEndClick { get; set; }
     [Parameter] public EventCallback OnResetClick { get; set; }

@@ -49,7 +49,7 @@
         <TypewriterControls 
             Overlay="true"
             IsRunning="_basicRunning"
-            IsPaused="false"
+            IsPaused="_basicPaused"
             Progress="_basicProgress"
             ShowProgress="true"
             ShowPlayPause="true"
@@ -57,10 +57,12 @@
             ShowStop="false"
             ShowSkipEnd="false"
             CanPlay="!_basicRunning"
-            CanPause="_basicRunning"
+            CanPause="_basicRunning && !_basicPaused"
+            CanResume="_basicPaused"
             CanReset="true"
             OnPlayClick="StartBasic"
-            OnPauseClick="StartBasic"
+            OnPauseClick="PauseBasic"
+            OnResumeClick="ResumeBasic"
             OnResetClick="ResetBasic" />
     </div>
     

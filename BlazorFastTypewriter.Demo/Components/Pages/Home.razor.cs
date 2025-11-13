@@ -1,5 +1,3 @@
-using Microsoft.AspNetCore.Components;
-
 namespace BlazorFastTypewriter.Demo.Components.Pages;
 
 public partial class Home
@@ -9,7 +7,9 @@ public partial class Home
 
   // Basic
   private Typewriter? _basicTypewriter;
+
   private bool _basicRunning;
+  private bool _basicPaused;
   private TypewriterProgressInfo? _basicProgress;
 
   // Hero handlers
@@ -31,6 +31,7 @@ public partial class Home
   private void HandleBasicComplete()
   {
     _basicRunning = false;
+    _basicPaused = false;
     StateHasChanged();
   }
 
@@ -39,7 +40,28 @@ public partial class Home
     if (_basicTypewriter is not null)
     {
       _basicRunning = true;
+      _basicPaused = false;
       await _basicTypewriter.Start();
+    }
+  }
+
+  private async Task PauseBasic()
+  {
+    if (_basicTypewriter is not null)
+    {
+      await _basicTypewriter.Pause();
+      _basicPaused = true;
+      StateHasChanged();
+    }
+  }
+
+  private async Task ResumeBasic()
+  {
+    if (_basicTypewriter is not null)
+    {
+      await _basicTypewriter.Resume();
+      _basicPaused = false;
+      StateHasChanged();
     }
   }
 
@@ -49,6 +71,7 @@ public partial class Home
     {
       await _basicTypewriter.Reset();
       _basicRunning = false;
+      _basicPaused = false;
     }
   }
 }

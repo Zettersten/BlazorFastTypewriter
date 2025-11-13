@@ -38,8 +38,13 @@ public partial class SeekDemo
   private void HandleSeek(TypewriterSeekEventArgs args)
   {
     _seekPercent = args.Percent;
-    _seekInfo = new TypewriterProgressInfo(args.TargetChar, args.TotalChars, args.Percent, args.Position);
-    
+    _seekInfo = new TypewriterProgressInfo(
+      args.TargetChar,
+      args.TotalChars,
+      args.Percent,
+      args.Position
+    );
+
     if (args.AtStart)
     {
       _seekRunning = false;
@@ -55,14 +60,19 @@ public partial class SeekDemo
       _seekRunning = true;
       _seekPaused = true;
     }
-    
+
     StateHasChanged();
   }
 
   private void HandleSeekProgress(TypewriterProgressEventArgs args)
   {
     _seekPercent = args.Percent;
-    _seekInfo = new TypewriterProgressInfo(args.Current, args.Total, args.Percent, args.Current / (double)args.Total);
+    _seekInfo = new TypewriterProgressInfo(
+      args.Current,
+      args.Total,
+      args.Percent,
+      args.Current / (double)args.Total
+    );
     StateHasChanged();
   }
 
@@ -73,7 +83,7 @@ public partial class SeekDemo
     _seekPercent = 100;
     StateHasChanged();
   }
-  
+
   private async Task HandlePlayPause()
   {
     if (_seekPaused)
@@ -89,7 +99,7 @@ public partial class SeekDemo
       await PauseSeek();
     }
   }
-  
+
   private async Task HandleSeekFromControls(double percent)
   {
     if (_seekTypewriter is not null)
