@@ -16,6 +16,7 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
 
   private bool _isPaused;
   private bool _isRunning;
+  private bool _isExtracting; // Flag to track DOM extraction phase
   private int _currentIndex;
   private int _totalChars;
   private int _currentCharCount;
@@ -152,8 +153,8 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
   /// </summary>
   private string GetVisibilityStyle()
   {
-    // Hide content if we're preparing to start or if animation hasn't begun
-    if (_isRunning && CurrentContent is null)
+    // Hide content during extraction phase to prevent flash
+    if (_isExtracting)
       return "visibility: hidden;";
     
     return string.Empty;

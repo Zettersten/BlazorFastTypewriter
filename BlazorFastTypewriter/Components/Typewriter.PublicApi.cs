@@ -45,26 +45,37 @@ public partial class Typewriter
     {
       try
       {
-        // CRITICAL: Render the original content BEFORE building operations
-        // This ensures new content from SetText() is in the DOM before extraction
+        // CRITICAL: Set extraction flag to hide content during this phase
+        _isExtracting = true;
+        
+        // First, clear any existing content to force a clean render
+        CurrentContent = null;
+        await InvokeAsync(StateHasChanged).ConfigureAwait(false);
+        await Task.Delay(50).ConfigureAwait(false);
+        
+        // Now render the NEW content that needs to be extracted
         CurrentContent = _originalContent;
         await InvokeAsync(StateHasChanged).ConfigureAwait(false);
-
-        // Longer delay to ensure Blazor has fully rendered the new content
-        await Task.Delay(150).ConfigureAwait(false);
+        
+        // Wait for Blazor to fully render the new content in the DOM
+        await Task.Delay(200).ConfigureAwait(false);
 
         var structure = await _jsModule
           .InvokeAsync<DomStructure>("extractStructure", [_containerId])
           .ConfigureAwait(false);
 
-        _operations = DomParsingService.ParseDomStructure(structure);
+        _operations = _domParser.ParseDomStructure(structure);
         _totalChars = _operations.Count(static op => op.Type == OperationType.Char);
+        
+        // Clear extraction flag
+        _isExtracting = false;
       }
       catch (Exception)
       {
         // Fallback: Create simple text-based operations without DOM parsing
         _operations = [];
         _totalChars = 0;
+        _isExtracting = false;
       }
 
       // If operations are still empty after parsing, skip animation and just show content
@@ -268,6 +279,7 @@ public partial class Typewriter
     _generation++;
     _isRunning = false;
     _isPaused = false;
+    _isExtracting = false;
     _currentIndex = 0;
     _currentCharCount = 0;
     _totalChars = 0;
