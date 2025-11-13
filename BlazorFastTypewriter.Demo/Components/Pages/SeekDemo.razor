@@ -12,35 +12,7 @@
     <h2>Interactive Seek Control</h2>
     <p>Jump to any position in the animation with seek functionality, perfect for progress bar scrubbing and interactive controls.</p>
     
-    <div class="demo-container">
-        <div class="seek-controls">
-            <div class="seek-bar-container">
-                <label>
-                    Seek Position: <strong>@(_seekPercent.ToString("F1"))%</strong>
-                    <input type="range" 
-                           class="seek-bar" 
-                           min="0" 
-                           max="100" 
-                           step="1" 
-                           value="@_seekPercent" 
-                           @oninput="HandleSeekInput"
-                           @onchange="HandleSeekChange" />
-                </label>
-            </div>
-            
-            <div class="seek-buttons">
-                <button @onclick="() => SeekToPosition(0)">0%</button>
-                <button @onclick="() => SeekToPosition(0.25)">25%</button>
-                <button @onclick="() => SeekToPosition(0.5)">50%</button>
-                <button @onclick="() => SeekToPosition(0.75)">75%</button>
-                <button @onclick="() => SeekToPosition(1)">100%</button>
-            </div>
-            
-            <div class="seek-info">
-                @_seekInfo
-            </div>
-        </div>
-        
+    <div class="player-container">
         <div class="demo-preview">
             <Typewriter @ref="_seekTypewriter"
                         Autostart="false"
@@ -50,7 +22,7 @@
                         OnComplete="HandleSeekComplete">
                 <div>
                     <h3>Seek Demo</h3>
-                    <p>Use the slider above or buttons to jump to any position in this text. The seek functionality allows you to navigate through the animation precisely.</p>
+                    <p>Use the progress bar scrubber or buttons below to jump to any position. Hover over the animation to reveal playback controls!</p>
                     <p>This is perfect for:</p>
                     <ul>
                         <li><strong>Progress bar scrubbing</strong> - drag to any position</li>
@@ -62,11 +34,31 @@
             </Typewriter>
         </div>
         
-        <div class="demo-controls">
-            <button @onclick="StartSeek" disabled="@(_seekRunning && !_seekPaused)">Start</button>
-            <button @onclick="PauseSeek" disabled="@(!_seekRunning || _seekPaused)">Pause</button>
-            <button @onclick="ResumeSeek" disabled="@(!_seekPaused)">Resume</button>
-            <button @onclick="ResetSeek">Reset</button>
+        <TypewriterControls 
+            Overlay="true"
+            IsRunning="_seekRunning"
+            IsPaused="_seekPaused"
+            Progress="_seekInfo"
+            ShowProgress="true"
+            ShowPlayPause="true"
+            ShowReset="true"
+            ShowStop="false"
+            ShowSkipEnd="false"
+            SeekEnabled="true"
+            CanPlay="!_seekRunning || _seekPaused"
+            CanPause="_seekRunning && !_seekPaused"
+            CanReset="true"
+            OnPlayClick="HandlePlayPause"
+            OnPauseClick="HandlePlayPause"
+            OnResetClick="ResetSeek"
+            OnSeekChange="HandleSeekFromControls" />
+        
+        <div class="seek-buttons">
+            <button @onclick="() => SeekToPosition(0)">0%</button>
+            <button @onclick="() => SeekToPosition(0.25)">25%</button>
+            <button @onclick="() => SeekToPosition(0.5)">50%</button>
+            <button @onclick="() => SeekToPosition(0.75)">75%</button>
+            <button @onclick="() => SeekToPosition(1)">100%</button>
         </div>
     </div>
     

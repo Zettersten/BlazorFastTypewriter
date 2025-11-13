@@ -10,6 +10,7 @@ public partial class Home
   // Basic
   private Typewriter? _basicTypewriter;
   private bool _basicRunning;
+  private TypewriterProgressInfo? _basicProgress;
 
   // Hero handlers
   private void HandleHeroComplete()

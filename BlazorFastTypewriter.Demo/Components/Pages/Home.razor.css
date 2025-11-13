@@ -23,6 +23,16 @@
     margin-bottom: 3rem;
 }
 
+/* Player Container */
+.player-container {
+    position: relative;
+    margin-bottom: 1rem;
+}
+
+.player-container .demo-box {
+    min-height: 150px;
+}
+
 .demo-section h2 {
     font-size: 1.5rem;
     font-weight: 600;

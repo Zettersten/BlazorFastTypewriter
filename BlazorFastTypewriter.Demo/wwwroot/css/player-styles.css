@@ -1,0 +1,45 @@
+/* Player Container - Shared styles for all player instances */
+.player-container {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.player-container .demo-preview,
+.player-container .demo-box {
+    position: relative;
+    min-height: 200px;
+    border-radius: 0.75rem;
+    overflow: hidden;
+}
+
+/* Seek Buttons */
+.seek-buttons {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.seek-buttons button {
+    padding: 0.5rem 1rem;
+    background: white;
+    color: #667eea;
+    border: 2px solid #667eea;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.seek-buttons button:hover {
+    background: #667eea;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.seek-buttons button:active {
+    transform: translateY(0);
+}

@@ -36,17 +36,32 @@
 <section class="demo-section">
     <h2>Basic Usage</h2>
     
-    <div class="demo-box">
-        <Typewriter @ref="_basicTypewriter"
-                    Autostart="false"
-                    Speed="60">
-            <p>Click the Start button to begin the animation!</p>
-        </Typewriter>
-    </div>
-    
-    <div class="controls">
-        <button @onclick="StartBasic" disabled="@(_basicRunning)">Start</button>
-        <button @onclick="ResetBasic">Reset</button>
+    <div class="player-container">
+        <div class="demo-box">
+            <Typewriter @ref="_basicTypewriter"
+                        Autostart="false"
+                        Speed="60"
+                        OnProgress="@((p) => _basicProgress = p)">
+                <p>Click the play button to begin the animation!</p>
+            </Typewriter>
+        </div>
+        
+        <TypewriterControls 
+            Overlay="true"
+            IsRunning="_basicRunning"
+            IsPaused="false"
+            Progress="_basicProgress"
+            ShowProgress="true"
+            ShowPlayPause="true"
+            ShowReset="true"
+            ShowStop="false"
+            ShowSkipEnd="false"
+            CanPlay="!_basicRunning"
+            CanPause="_basicRunning"
+            CanReset="true"
+            OnPlayClick="StartBasic"
+            OnPauseClick="StartBasic"
+            OnResetClick="ResetBasic" />
     </div>
     
     <CodeSample>
