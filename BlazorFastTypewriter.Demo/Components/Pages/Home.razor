@@ -41,7 +41,7 @@
             <Typewriter @ref="_basicTypewriter"
                         Autostart="false"
                         Speed="60"
-                        OnProgress="@((p) => _basicProgress = p)">
+                        OnProgress="@((p) => _basicProgress = new(p.Current, p.Total, p.Percent, 0))">
                 <p>Click the play button to begin the animation!</p>
             </Typewriter>
         </div>

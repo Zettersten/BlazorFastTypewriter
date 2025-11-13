@@ -5,7 +5,7 @@
     {
         <div class="player-progress">
             <div class="progress-bar">
-                <div class="progress-fill" style="width: @(Progress.Value.Percent)%"></div>
+                <div class="progress-fill" style="width: @(Progress.Percent)%"></div>
                 @if (SeekEnabled)
                 {
                     <input type="range" 
@@ -13,13 +13,13 @@
                            min="0" 
                            max="100" 
                            step="0.1" 
-                           value="@(Progress.Value.Percent)"
+                           value="@(Progress.Percent)"
                            @oninput="HandleSeek" />
                 }
             </div>
             <div class="progress-time">
-                <span>@Progress.Value.Current / @Progress.Value.Total chars</span>
-                <span>@Progress.Value.Percent.ToString("F1")%</span>
+                <span>@Progress.Current / @Progress.Total chars</span>
+                <span>@Progress.Percent.ToString("F1")%</span>
             </div>
         </div>
     }
