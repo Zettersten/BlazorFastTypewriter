@@ -26,6 +26,7 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
   private bool _prefersReducedMotion;
   private bool _isInitialized;
   private readonly string _containerId = Guid.NewGuid().ToString("N")[..8];
+  private readonly SemaphoreSlim _animationLock = new(1, 1);
 
   /// <summary>
   /// Gets or sets the JavaScript runtime for reduced motion detection and DOM parsing.
@@ -197,21 +198,28 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
     if (ChildContent is null)
       return;
 
-    // If paused (e.g., from seek), just resume instead of restarting
-    if (_isRunning && _isPaused)
+    // Thread-safe lock to prevent multiple simultaneous starts
+    if (!await _animationLock.WaitAsync(0))
+      return; // Another operation in progress
+
+    try
     {
-      await Resume();
-      return;
-    }
+      // If paused (e.g., from seek), just resume instead of restarting
+      if (_isRunning && _isPaused)
+      {
+        _animationLock.Release();
+        await Resume();
+        return;
+      }
 
-    // If already running and not paused, don't restart
-    if (_isRunning)
-      return;
+      // If already running and not paused, don't restart
+      if (_isRunning)
+        return;
 
-    _generation++;
-    _currentIndex = 0;
-    _currentCharCount = 0;
-    _isPaused = false;
+      _generation++;
+      _currentIndex = 0;
+      _currentCharCount = 0;
+      _isPaused = false;
 
     // Capture original content if not already set
     if (_originalContent is null)
@@ -312,6 +320,11 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
         await OnComplete.InvokeAsync();
       }
     }, ct);
+    }
+    finally
+    {
+      _animationLock.Release();
+    }
   }
 
   /// <summary>
@@ -322,9 +335,20 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
     if (!_isRunning || _isPaused)
       return;
 
-    _isPaused = true;
-    await OnPause.InvokeAsync();
-    await InvokeAsync(StateHasChanged);
+    // Thread-safe lock for pause operation
+    if (!await _animationLock.WaitAsync(0))
+      return; // Another operation in progress
+
+    try
+    {
+      _isPaused = true;
+      await OnPause.InvokeAsync();
+      await InvokeAsync(StateHasChanged);
+    }
+    finally
+    {
+      _animationLock.Release();
+    }
   }
 
   /// <summary>
@@ -335,12 +359,42 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
     if (!_isPaused || !_isRunning)
       return;
 
-    _isPaused = false;
-    await OnResume.InvokeAsync();
-    await InvokeAsync(StateHasChanged);
-    
-    // The existing AnimateAsync task will continue automatically
-    // when it checks _isPaused in its loop - no need to start a new task
+    // Thread-safe lock to prevent race conditions
+    if (!await _animationLock.WaitAsync(0))
+      return; // Another operation in progress
+
+    try
+    {
+      _isPaused = false;
+      
+      // Increment generation to invalidate any old paused tasks
+      _generation++;
+      var gen = _generation;
+      
+      await OnResume.InvokeAsync();
+      await InvokeAsync(StateHasChanged);
+      
+      // Start animation task from current position (handles seek scenario)
+      var duration = Math.Max(
+        MinDuration,
+        Math.Min(MaxDuration, (int)Math.Round((_totalChars / (double)Speed) * 1000))
+      );
+      var delay = _totalChars > 0 ? Math.Max(8, duration / _totalChars) : 0;
+
+      _ = Task.Run(
+        () =>
+          AnimateAsync(
+            gen,
+            delay,
+            _totalChars,
+            _cancellationTokenSource?.Token ?? CancellationToken.None
+          )
+      );
+    }
+    finally
+    {
+      _animationLock.Release();
+    }
   }
 
   /// <summary>
