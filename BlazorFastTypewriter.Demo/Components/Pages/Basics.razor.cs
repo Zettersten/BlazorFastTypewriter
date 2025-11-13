@@ -7,19 +7,23 @@ public partial class Basics
   // Basic
   private Typewriter? _basicTypewriter;
   private bool _basicRunning;
+  private TypewriterProgressInfo? _basicProgress;
 
   // Speed
   private Typewriter? _speedTypewriter;
   private bool _speedRunning;
   private int _speed = 100;
+  private TypewriterProgressInfo? _speedProgress;
 
   // HTML
   private Typewriter? _htmlTypewriter;
   private bool _htmlRunning;
+  private TypewriterProgressInfo? _htmlProgress;
 
   // RTL
   private Typewriter? _rtlTypewriter;
   private bool _rtlRunning;
+  private TypewriterProgressInfo? _rtlProgress;
 
   // Basic handlers
   private void HandleBasicComplete()
@@ -127,5 +131,36 @@ public partial class Basics
       await _rtlTypewriter.Reset();
       _rtlRunning = false;
     }
+  }
+
+  // Progress handlers
+  private void HandleBasicProgress(TypewriterProgressEventArgs args)
+  {
+    _basicProgress = new TypewriterProgressInfo(args.Current, args.Total, args.Percent, args.Current / (double)args.Total);
+    StateHasChanged();
+  }
+
+  private void HandleSpeedProgress(TypewriterProgressEventArgs args)
+  {
+    _speedProgress = new TypewriterProgressInfo(args.Current, args.Total, args.Percent, args.Current / (double)args.Total);
+    StateHasChanged();
+  }
+
+  private void HandleHtmlProgress(TypewriterProgressEventArgs args)
+  {
+    _htmlProgress = new TypewriterProgressInfo(args.Current, args.Total, args.Percent, args.Current / (double)args.Total);
+    StateHasChanged();
+  }
+
+  private void HandleRtlProgress(TypewriterProgressEventArgs args)
+  {
+    _rtlProgress = new TypewriterProgressInfo(args.Current, args.Total, args.Percent, args.Current / (double)args.Total);
+    StateHasChanged();
+  }
+
+  private async Task HandleSpeedChangeFromControls(int newSpeed)
+  {
+    _speed = newSpeed;
+    StateHasChanged();
   }
 }

@@ -12,7 +12,28 @@
     <h2>Interactive Playback</h2>
     <p>Full programmatic control over the animation with Start, Pause, Resume, Complete, and Reset methods.</p>
     
-    <div class="demo-container">
+    <div class="player-container">
+        <TypewriterControls 
+            Overlay="false"
+            IsRunning="_controlRunning"
+            IsPaused="_controlPaused"
+            Progress="_controlProgress"
+            ShowProgress="true"
+            ShowPlayPause="true"
+            ShowReset="true"
+            ShowStop="true"
+            ShowSkipEnd="true"
+            CanPlay="!_controlRunning || _controlPaused"
+            CanPause="_controlRunning && !_controlPaused"
+            CanStop="_controlRunning"
+            CanSkipEnd="_controlRunning"
+            CanReset="true"
+            OnPlayClick="HandlePlayPause"
+            OnPauseClick="HandlePlayPause"
+            OnStopClick="ResetControl"
+            OnSkipEndClick="CompleteControl"
+            OnResetClick="ResetControl" />
+        
         <div class="demo-preview">
             <Typewriter @ref="_controlTypewriter"
                         Autostart="false"
@@ -20,22 +41,15 @@
                         OnStart="HandleControlStart"
                         OnPause="HandleControlPause"
                         OnResume="HandleControlResume"
-                        OnComplete="HandleControlComplete">
+                        OnComplete="HandleControlComplete"
+                        OnProgress="HandleControlProgress">
                 <div>
                     <h3>Interactive Controls Demo</h3>
-                    <p>Use the buttons below to control the animation. You can pause, resume, complete instantly, or reset to start over.</p>
+                    <p>Use the player controls above to control the animation. You can play, pause, resume, skip to end, or reset.</p>
                     <p>Status: <strong>@_controlStatus</strong></p>
                     <p>This demonstrates all the lifecycle methods available for controlling the typewriter animation programmatically.</p>
                 </div>
             </Typewriter>
-        </div>
-        
-        <div class="demo-controls">
-            <button @onclick="StartControl" disabled="@(_controlRunning && !_controlPaused)">Start</button>
-            <button @onclick="PauseControl" disabled="@(!_controlRunning || _controlPaused)">Pause</button>
-            <button @onclick="ResumeControl" disabled="@(!_controlPaused)">Resume</button>
-            <button @onclick="CompleteControl" disabled="@(!_controlRunning)">Complete</button>
-            <button @onclick="ResetControl" disabled="@(_controlRunning && !_controlPaused)">Reset</button>
         </div>
     </div>
     

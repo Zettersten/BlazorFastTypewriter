@@ -3,89 +3,128 @@
 
 <PageTitle>AI Chat Demo - BlazorFastTypewriter</PageTitle>
 
-<div class="page-header">
-    <h1>AI Chat Streaming Demo</h1>
-    <p class="page-subtitle">Simulate an AI assistant streaming responses in real-time</p>
-</div>
-
-<section class="demo-section">
-    <h2>Interactive Chat</h2>
-    <p>Simulate an AI assistant streaming responses in real-time, perfect for chat applications and interactive experiences.</p>
+<div class="chat-page">
+    <div class="chat-header">
+        <div class="header-content">
+            <div class="header-title">
+                <svg class="ai-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                </svg>
+                <div>
+                    <h1>AI Assistant</h1>
+                    <p class="subtitle">Powered by BlazorFastTypewriter</p>
+                </div>
+            </div>
+            <div class="speed-control-compact">
+                <svg class="speed-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M20.38 8.57l-1.23 1.85a8 8 0 0 1-.22 7.58H5.07A8 8 0 0 1 15.58 6.85l1.85-1.23A10 10 0 0 0 3.35 19a2 2 0 0 0 1.72 1h13.85a2 2 0 0 0 1.74-1 10 10 0 0 0-.27-10.44z"/>
+                    <path d="M10.59 15.41a2 2 0 0 0 2.83 0l5.66-8.49-8.49 5.66a2 2 0 0 0 0 2.83z"/>
+                </svg>
+                <input type="range" 
+                       class="speed-slider" 
+                       min="50" 
+                       max="300" 
+                       step="25" 
+                       value="@_aiChatSpeed" 
+                       @onchange="HandleAiSpeedChange"
+                       title="Response Speed" />
+                <span class="speed-value">@_aiChatSpeed</span>
+            </div>
+        </div>
+    </div>
     
-    <div class="demo-container">
-        <div class="chat-container">
-            <div class="chat-messages">
-                @foreach (var message in _chatMessages)
-                {
-                    <div class="chat-message @(message.IsUser ? "user-message" : "ai-message")">
-                        <div class="message-header">
-                            <strong>@(message.IsUser ? "You" : "AI Assistant")</strong>
-                            <span class="message-time">@message.Time.ToString("HH:mm")</span>
-                        </div>
+    <div class="chat-messages-container" id="chat-messages">
+        <div class="chat-messages-inner">
+            @if (_chatMessages.Count == 0)
+            {
+                <div class="welcome-message">
+                    <svg class="welcome-icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                    </svg>
+                    <h2>Welcome to AI Chat Demo</h2>
+                    <p>Start a conversation to see real-time streaming responses!</p>
+                    <div class="example-prompts">
+                        <button class="example-prompt" @onclick='() => SetPrompt("Tell me about Blazor")'>
+                            Tell me about Blazor
+                        </button>
+                        <button class="example-prompt" @onclick='() => SetPrompt("How does this component work?")'>
+                            How does this component work?
+                        </button>
+                        <button class="example-prompt" @onclick='() => SetPrompt("What can I ask you?")'>
+                            What can I ask you?
+                        </button>
+                    </div>
+                </div>
+            }
+            
+            @foreach (var message in _chatMessages)
+            {
+                <div class="message-row @(message.IsUser ? "user-row" : "ai-row")">
+                    <div class="message-avatar">
                         @if (message.IsUser)
                         {
-                            <div class="message-content">@message.Content</div>
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                            </svg>
                         }
-                        else if (message.TypewriterContent is not null)
+                        else
                         {
-                            <div class="message-content">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
+                            </svg>
+                        }
+                    </div>
+                    <div class="message-bubble @(message.IsUser ? "user-bubble" : "ai-bubble")">
+                        <div class="message-sender">@(message.IsUser ? "You" : "AI Assistant")</div>
+                        <div class="message-text">
+                            @if (message.IsUser)
+                            {
+                                @message.Content
+                            }
+                            else if (message.TypewriterContent is not null)
+                            {
                                 <Typewriter Autostart="@message.ShouldAutoStart"
                                             Speed="@_aiChatSpeed"
                                             OnComplete="@(() => HandleAiMessageComplete(message))">
                                     @message.TypewriterContent
                                 </Typewriter>
-                            </div>
-                        }
+                            }
+                        </div>
                     </div>
-                }
-            </div>
+                </div>
+            }
             
-            <div class="chat-input-container">
-                <div class="speed-control">
-                    <label>
-                        AI Response Speed: <strong>@_aiChatSpeed</strong> chars/sec
-                        <input type="range" min="50" max="300" step="25" value="@_aiChatSpeed" @onchange="HandleAiSpeedChange" />
-                    </label>
+            @if (_isAiTyping && _chatMessages.Count > 0 && !_chatMessages[^1].IsUser)
+            {
+                <div class="typing-indicator">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
                 </div>
-                <div class="chat-input">
-                    <input type="text" 
-                           @bind="_chatInput" 
-                           @bind:event="oninput"
-                           @onkeydown="HandleChatKeyDown"
-                           placeholder="Ask the AI assistant anything..."
-                           disabled="@_isAiTyping" />
-                    <button @onclick="SendChatMessage" disabled="@(string.IsNullOrWhiteSpace(_chatInput) || _isAiTyping)">
-                        @(_isAiTyping ? "AI is typing..." : "Send")
-                    </button>
-                </div>
-            </div>
+            }
         </div>
     </div>
     
-    <CodeSample>
-        <pre><code class="language-csharp">@@foreach (var message in _messages)
-{
-    &lt;div class="message @@message.Sender"&gt;
-        @@if (message.IsAi)
-        {
-            &lt;Typewriter Speed="150" Autostart="true"&gt;
-                @@message.Content
-            &lt;/Typewriter&gt;
-        }
-        else
-        {
-            @@message.Content
-        }
-    &lt;/div&gt;
-}
-
-@@code {
-    private async Task AddAiMessage(string content)
-    {
-        var message = new Message { IsAi = true, Content = content };
-        _messages.Add(message);
-        await InvokeAsync(StateHasChanged);
-    }
-}</code></pre>
-    </CodeSample>
-</section>
+    <div class="chat-input-area">
+        <div class="chat-input-container">
+            <input type="text" 
+                   class="chat-input"
+                   @bind="_chatInput" 
+                   @bind:event="oninput"
+                   @onkeydown="HandleChatKeyDown"
+                   placeholder="Send a message..."
+                   disabled="@_isAiTyping" />
+            <button class="send-button" 
+                    @onclick="SendChatMessage" 
+                    disabled="@(string.IsNullOrWhiteSpace(_chatInput) || _isAiTyping)"
+                    title="Send message">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                </svg>
+            </button>
+        </div>
+        <div class="chat-disclaimer">
+            This is a demo showcasing the BlazorFastTypewriter component with simulated AI responses.
+        </div>
+    </div>
+</div>

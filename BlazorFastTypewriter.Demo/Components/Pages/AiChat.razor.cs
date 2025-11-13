@@ -67,6 +67,12 @@ public partial class AiChat
     StateHasChanged();
   }
 
+  private async Task SetPrompt(string prompt)
+  {
+    _chatInput = prompt;
+    await SendChatMessage();
+  }
+
   private string GenerateAiResponse(string input)
   {
     var lowerInput = input.ToLowerInvariant();

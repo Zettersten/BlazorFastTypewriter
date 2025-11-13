@@ -12,19 +12,30 @@
     <h2>Simple Example</h2>
     <p>Get started with a simple typewriter animation. The component automatically starts when the page loads.</p>
     
-    <div class="demo-container">
+    <div class="player-container">
+        <TypewriterControls 
+            Overlay="false"
+            IsRunning="_basicRunning"
+            IsPaused="false"
+            Progress="_basicProgress"
+            ShowProgress="true"
+            ShowPlayPause="true"
+            ShowReset="true"
+            CanPlay="!_basicRunning"
+            CanPause="_basicRunning"
+            CanReset="true"
+            OnPlayClick="StartBasic"
+            OnPauseClick="StartBasic"
+            OnResetClick="ResetBasic" />
+        
         <div class="demo-preview">
             <Typewriter @ref="_basicTypewriter"
                         Autostart="false"
                         Speed="60"
-                        OnComplete="HandleBasicComplete">
+                        OnComplete="HandleBasicComplete"
+                        OnProgress="HandleBasicProgress">
                 <p>This is a <strong>simple example</strong> of the typewriter component. It types character by character, preserving <em>formatting</em> and <a href="#">links</a>.</p>
             </Typewriter>
-        </div>
-        
-        <div class="demo-controls">
-            <button @onclick="StartBasic" disabled="@(_basicRunning)">Start</button>
-            <button @onclick="ResetBasic">Reset</button>
         </div>
     </div>
     
@@ -39,26 +50,36 @@
     <h2>Speed Control</h2>
     <p>Control the typing speed using the <code>Speed</code> parameter (characters per second). Adjust the slider to see different speeds.</p>
     
-    <div class="demo-container">
-        <div class="speed-control">
-            <label>
-                Speed: <strong>@_speed</strong> chars/sec
-                <input type="range" min="20" max="200" step="10" value="@_speed" @onchange="HandleSpeedChange" />
-            </label>
-        </div>
+    <div class="player-container">
+        <TypewriterControls 
+            Overlay="false"
+            IsRunning="_speedRunning"
+            IsPaused="false"
+            Progress="_speedProgress"
+            ShowProgress="true"
+            ShowPlayPause="true"
+            ShowReset="true"
+            ShowSpeed="true"
+            SpeedMin="20"
+            SpeedMax="200"
+            SpeedStep="10"
+            CurrentSpeed="_speed"
+            CanPlay="!_speedRunning"
+            CanPause="_speedRunning"
+            CanReset="true"
+            OnPlayClick="StartSpeed"
+            OnPauseClick="StartSpeed"
+            OnResetClick="ResetSpeed"
+            OnSpeedChange="HandleSpeedChangeFromControls" />
         
         <div class="demo-preview">
             <Typewriter @ref="_speedTypewriter"
                         Autostart="false"
                         Speed="@_speed"
-                        OnComplete="HandleSpeedComplete">
+                        OnComplete="HandleSpeedComplete"
+                        OnProgress="HandleSpeedProgress">
                 <p>Watch how the typing speed changes as you adjust the slider. This demonstrates the <code>Speed</code> parameter in action.</p>
             </Typewriter>
-        </div>
-        
-        <div class="demo-controls">
-            <button @onclick="StartSpeed" disabled="@(_speedRunning)">Start</button>
-            <button @onclick="ResetSpeed">Reset</button>
         </div>
     </div>
     
@@ -77,12 +98,28 @@
     <h2>HTML & Formatting Support</h2>
     <p>The component preserves HTML structure, including headings, lists, links, code blocks, and nested elements.</p>
     
-    <div class="demo-container">
+    <div class="player-container">
+        <TypewriterControls 
+            Overlay="false"
+            IsRunning="_htmlRunning"
+            IsPaused="false"
+            Progress="_htmlProgress"
+            ShowProgress="true"
+            ShowPlayPause="true"
+            ShowReset="true"
+            CanPlay="!_htmlRunning"
+            CanPause="_htmlRunning"
+            CanReset="true"
+            OnPlayClick="StartHtml"
+            OnPauseClick="StartHtml"
+            OnResetClick="ResetHtml" />
+        
         <div class="demo-preview">
             <Typewriter @ref="_htmlTypewriter"
                         Autostart="false"
                         Speed="50"
-                        OnComplete="HandleHtmlComplete">
+                        OnComplete="HandleHtmlComplete"
+                        OnProgress="HandleHtmlProgress">
                 <div>
                     <h3>Rich Content Example</h3>
                     <p>This demonstrates <strong>bold text</strong>, <em>italic text</em>, and <a href="#">clickable links</a>.</p>
@@ -94,11 +131,6 @@
                     <p>You can even include <span style="color: #667eea;">colored text</span> and other inline styles.</p>
                 </div>
             </Typewriter>
-        </div>
-        
-        <div class="demo-controls">
-            <button @onclick="StartHtml" disabled="@(_htmlRunning)">Start</button>
-            <button @onclick="ResetHtml">Reset</button>
         </div>
     </div>
     
@@ -120,13 +152,29 @@
     <h2>RTL (Right-to-Left) Support</h2>
     <p>Full support for bidirectional text including Arabic, Hebrew, and other RTL languages.</p>
     
-    <div class="demo-container">
+    <div class="player-container">
+        <TypewriterControls 
+            Overlay="false"
+            IsRunning="_rtlRunning"
+            IsPaused="false"
+            Progress="_rtlProgress"
+            ShowProgress="true"
+            ShowPlayPause="true"
+            ShowReset="true"
+            CanPlay="!_rtlRunning"
+            CanPause="_rtlRunning"
+            CanReset="true"
+            OnPlayClick="StartRtl"
+            OnPauseClick="StartRtl"
+            OnResetClick="ResetRtl" />
+        
         <div class="demo-preview">
             <Typewriter @ref="_rtlTypewriter"
                         Autostart="false"
                         Speed="50"
                         Dir="rtl"
-                        OnComplete="HandleRtlComplete">
+                        OnComplete="HandleRtlComplete"
+                        OnProgress="HandleRtlProgress">
                 <div dir="rtl">
                     <h3>دعم اللغة العربية</h3>
                     <p>يدعم المكوّن <strong>النصوص العربية</strong> مع الحفاظ على الاتجاه الصحيح. يمكن دمج <a href="#">الروابط</a> والنصوص الإنجليزية مثل <code>TypeWriter</code> داخل المحتوى العربي.</p>
@@ -137,11 +185,6 @@
                     </ul>
                 </div>
             </Typewriter>
-        </div>
-        
-        <div class="demo-controls">
-            <button @onclick="StartRtl" disabled="@(_rtlRunning)">Start</button>
-            <button @onclick="ResetRtl">Reset</button>
         </div>
     </div>
     

@@ -9,6 +9,7 @@ public partial class PlaybackControls
   private bool _controlRunning;
   private bool _controlPaused;
   private string _controlStatus = "Ready";
+  private TypewriterProgressInfo? _controlProgress;
 
   // Progress
   private Typewriter? _progressTypewriter;
@@ -88,6 +89,28 @@ public partial class PlaybackControls
     {
       await _controlTypewriter.Reset();
       _controlStatus = "Ready";
+    }
+  }
+
+  private void HandleControlProgress(TypewriterProgressEventArgs args)
+  {
+    _controlProgress = new TypewriterProgressInfo(args.Current, args.Total, args.Percent, args.Current / (double)args.Total);
+    StateHasChanged();
+  }
+
+  private async Task HandlePlayPause()
+  {
+    if (_controlPaused)
+    {
+      await ResumeControl();
+    }
+    else if (!_controlRunning)
+    {
+      await StartControl();
+    }
+    else
+    {
+      await PauseControl();
     }
   }
 
