@@ -46,7 +46,9 @@ public partial class Typewriter
     {
       try
       {
-        // Ensure content is rendered so we can extract it
+        // Explicitly render the original content so we can extract it
+        // This ensures new content from SetText() is properly rendered before extraction
+        CurrentContent = _originalContent;
         await InvokeAsync(StateHasChanged).ConfigureAwait(false);
         await Task.Delay(100).ConfigureAwait(false); // Allow DOM to update and render
 

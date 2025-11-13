@@ -20,7 +20,7 @@ public partial class Typewriter
 
     try
     {
-      // Ensure content is rendered
+      // Explicitly render the original content so we can extract it
       CurrentContent = _originalContent;
       await InvokeAsync(StateHasChanged).ConfigureAwait(false);
       await Task.Delay(100).ConfigureAwait(false);
