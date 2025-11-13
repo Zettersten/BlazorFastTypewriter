@@ -51,7 +51,8 @@ public partial class Typewriter
 
     if (targetChar <= 0)
     {
-      CurrentContent = null;
+      // Set to empty content instead of null to avoid showing ChildContent fallback
+      CurrentContent = builder => { };
       await InvokeAsync(StateHasChanged);
       return;
     }
@@ -192,6 +193,12 @@ public partial class Typewriter
 
     _isRunning = false;
     _currentCharCount = totalChars;
+    
+    // Always fire final progress event at 100%
+    await OnProgress.InvokeAsync(
+      new TypewriterProgressEventArgs(totalChars, totalChars, 100.0)
+    );
+    
     await InvokeAsync(() =>
     {
       CurrentContent = _originalContent;

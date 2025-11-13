@@ -1,17 +1,13 @@
 .typewriter-player {
-    position: relative;
     width: 100%;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
 }
 
 .typewriter-player.overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.7) 70%, transparent 100%);
-    backdrop-filter: blur(10px);
-    padding: 1rem;
-    z-index: 10;
+    background: #f8f9fa;
 }
 
 /* Progress Bar */
@@ -22,7 +18,7 @@
 .progress-bar {
     position: relative;
     height: 5px;
-    background: rgba(255, 255, 255, 0.25);
+    background: #e5e7eb;
     border-radius: 2.5px;
     overflow: visible;
     cursor: pointer;
@@ -79,16 +75,8 @@
     display: flex;
     justify-content: space-between;
     font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.9);
-    font-weight: 500;
-}
-
-.overlay .progress-time {
-    color: rgba(255, 255, 255, 0.9);
-}
-
-.typewriter-player:not(.overlay) .progress-time {
     color: #6b7280;
+    font-weight: 500;
 }
 
 /* Control Buttons */
@@ -103,7 +91,7 @@
     height: 40px;
     border-radius: 50%;
     border: none;
-    background: rgba(255, 255, 255, 0.2);
+    background: #667eea;
     color: white;
     display: flex;
     align-items: center;
@@ -111,23 +99,13 @@
     cursor: pointer;
     transition: all 0.2s ease;
     padding: 0;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-}
-
-.typewriter-player:not(.overlay) .control-btn {
-    background: #667eea;
-    color: white;
+    box-shadow: 0 2px 6px rgba(102, 126, 234, 0.3);
 }
 
 .control-btn:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.3);
-    transform: scale(1.08);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-.typewriter-player:not(.overlay) .control-btn:hover:not(:disabled) {
     background: #5568d3;
     transform: scale(1.08);
+    box-shadow: 0 3px 10px rgba(102, 126, 234, 0.4);
 }
 
 .control-btn:active:not(:disabled) {
@@ -149,24 +127,14 @@
 .pause-btn {
     width: 48px;
     height: 48px;
-    background: rgba(255, 255, 255, 0.25);
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
-}
-
-.typewriter-player:not(.overlay) .play-btn,
-.typewriter-player:not(.overlay) .pause-btn {
     background: #667eea;
+    box-shadow: 0 3px 10px rgba(102, 126, 234, 0.35);
 }
 
 .play-btn:hover:not(:disabled),
 .pause-btn:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.4);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.35);
-}
-
-.typewriter-player:not(.overlay) .play-btn:hover:not(:disabled),
-.typewriter-player:not(.overlay) .pause-btn:hover:not(:disabled) {
     background: #5568d3;
+    box-shadow: 0 4px 14px rgba(102, 126, 234, 0.45);
 }
 
 .play-btn svg {
@@ -186,13 +154,9 @@
     gap: 0.5rem;
     margin-left: auto;
     padding: 0.5rem 0.75rem;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
-}
-
-.typewriter-player:not(.overlay) .speed-control {
     background: rgba(102, 126, 234, 0.1);
     border: 1px solid rgba(102, 126, 234, 0.2);
+    border-radius: 20px;
 }
 
 .speed-control label {
@@ -206,10 +170,6 @@
 .speed-icon {
     width: 18px;
     height: 18px;
-    color: rgba(255, 255, 255, 0.9);
-}
-
-.typewriter-player:not(.overlay) .speed-icon {
     color: #667eea;
 }
 
@@ -217,14 +177,10 @@
     width: 80px;
     height: 4px;
     border-radius: 2px;
-    background: rgba(255, 255, 255, 0.3);
+    background: rgba(102, 126, 234, 0.3);
     outline: none;
     -webkit-appearance: none;
     appearance: none;
-}
-
-.typewriter-player:not(.overlay) .speed-slider {
-    background: rgba(102, 126, 234, 0.3);
 }
 
 .speed-slider::-webkit-slider-thumb {
@@ -233,37 +189,25 @@
     width: 12px;
     height: 12px;
     border-radius: 50%;
-    background: #fff;
-    cursor: pointer;
-}
-
-.typewriter-player:not(.overlay) .speed-slider::-webkit-slider-thumb {
     background: #667eea;
+    cursor: pointer;
 }
 
 .speed-slider::-moz-range-thumb {
     width: 12px;
     height: 12px;
     border-radius: 50%;
-    background: #fff;
+    background: #667eea;
     cursor: pointer;
     border: none;
-}
-
-.typewriter-player:not(.overlay) .speed-slider::-moz-range-thumb {
-    background: #667eea;
 }
 
 .speed-value {
     font-size: 0.875rem;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.9);
+    color: #667eea;
     min-width: 2.5rem;
     text-align: right;
-}
-
-.typewriter-player:not(.overlay) .speed-value {
-    color: #667eea;
 }
 
 /* Responsive */

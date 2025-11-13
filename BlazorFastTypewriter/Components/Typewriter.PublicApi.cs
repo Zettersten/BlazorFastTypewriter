@@ -352,9 +352,9 @@ public partial class Typewriter
     // Build DOM to target - now safe as old tasks are cancelled
     await BuildDOMToIndex(targetChar);
 
-    // Handle edge cases
+    // Handle edge cases based on normalized position (not current char count)
     var atStart = normalizedPosition == 0;
-    var atEnd = normalizedPosition == 1 || _currentCharCount >= _totalChars;
+    var atEnd = normalizedPosition >= 1.0;
 
     if (atStart || atEnd)
     {
