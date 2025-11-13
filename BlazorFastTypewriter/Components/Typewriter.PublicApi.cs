@@ -17,20 +17,20 @@ public partial class Typewriter
     if (ChildContent is null)
       return;
 
+    // If paused (e.g., from seek), just resume instead of restarting
+    // Do this BEFORE acquiring lock to avoid lock issues
+    if (_isRunning && _isPaused)
+    {
+      await Resume();
+      return;
+    }
+
     // Thread-safe lock to prevent multiple simultaneous starts
     if (!await _animationLock.WaitAsync(0))
       return; // Another operation in progress
 
     try
     {
-      // If paused (e.g., from seek), just resume instead of restarting
-      if (_isRunning && _isPaused)
-      {
-        _animationLock.Release();
-        await Resume();
-        return;
-      }
-
       // If already running and not paused, don't restart
       if (_isRunning)
         return;
