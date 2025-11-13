@@ -327,10 +327,18 @@ public partial class Typewriter
     // Remember if animation was running
     var wasRunning = _isRunning && !_isPaused;
 
+    // CRITICAL: Increment generation and cancel old tasks BEFORE pausing
+    // This prevents old paused tasks from overwriting _currentIndex
+    _generation++;
+    _cancellationTokenSource?.Cancel();
+    _cancellationTokenSource?.Dispose();
+    _cancellationTokenSource = new CancellationTokenSource();
+
     // Pause if running, or set paused state if not running
     if (wasRunning)
     {
-      await Pause();
+      // Set paused state directly (don't call Pause() as it tries to acquire lock)
+      _isPaused = true;
     }
     else if (!_isRunning)
     {
@@ -341,7 +349,7 @@ public partial class Typewriter
     // Calculate target character
     var targetChar = (int)(normalizedPosition * _totalChars);
 
-    // Build DOM to target
+    // Build DOM to target - now safe as old tasks are cancelled
     await BuildDOMToIndex(targetChar);
 
     // Handle edge cases
