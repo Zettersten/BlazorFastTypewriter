@@ -189,11 +189,18 @@ public partial class Typewriter
 
     try
     {
-      _isPaused = false;
-
       // Increment generation to invalidate any old paused tasks
       _generation++;
       var gen = _generation;
+
+      // Cancel and recreate cancellation token to stop old tasks immediately
+      _cancellationTokenSource?.Cancel();
+      _cancellationTokenSource?.Dispose();
+      _cancellationTokenSource = new CancellationTokenSource();
+      var ct = _cancellationTokenSource.Token;
+
+      // Now set isPaused to false AFTER cancelling old tasks
+      _isPaused = false;
 
       await OnResume.InvokeAsync();
       await InvokeAsync(StateHasChanged);
@@ -205,14 +212,31 @@ public partial class Typewriter
       );
       var delay = _totalChars > 0 ? Math.Max(8, duration / _totalChars) : 0;
 
+      // Run animation with error handling
       _ = Task.Run(
-        () =>
-          AnimateAsync(
-            gen,
-            delay,
-            _totalChars,
-            _cancellationTokenSource?.Token ?? CancellationToken.None
-          )
+        async () =>
+        {
+          try
+          {
+            await AnimateAsync(gen, delay, _totalChars, ct);
+          }
+          catch (OperationCanceledException)
+          {
+            // Task was cancelled, this is expected - do nothing
+          }
+          catch (Exception)
+          {
+            // On unexpected error, ensure content is restored
+            _isRunning = false;
+            await InvokeAsync(() =>
+            {
+              CurrentContent = _originalContent;
+              StateHasChanged();
+            });
+            await OnComplete.InvokeAsync();
+          }
+        },
+        ct
       );
     }
     finally
