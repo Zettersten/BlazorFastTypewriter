@@ -49,7 +49,7 @@ public partial class Typewriter
         // This ensures new content from SetText() is in the DOM before extraction
         CurrentContent = _originalContent;
         await InvokeAsync(StateHasChanged).ConfigureAwait(false);
-        
+
         // Longer delay to ensure Blazor has fully rendered the new content
         await Task.Delay(150).ConfigureAwait(false);
 
@@ -57,7 +57,7 @@ public partial class Typewriter
           .InvokeAsync<DomStructure>("extractStructure", [_containerId])
           .ConfigureAwait(false);
 
-        _operations = _domParser.ParseDomStructure(structure);
+        _operations = DomParsingService.ParseDomStructure(structure);
         _totalChars = _operations.Count(static op => op.Type == OperationType.Char);
       }
       catch (Exception)
