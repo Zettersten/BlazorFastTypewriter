@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using BlazorFastTypewriter.Services;
 using Microsoft.AspNetCore.Components;
 
@@ -45,30 +46,24 @@ public partial class Typewriter
     {
       try
       {
-        // CRITICAL: Set extraction flag to hide content during this phase
+        // CRITICAL: Set extraction flag and render content in hidden extraction container
         _isExtracting = true;
-
-        // First, clear any existing content to force a clean render
-        CurrentContent = null;
         await InvokeAsync(StateHasChanged).ConfigureAwait(false);
-        await Task.Delay(50).ConfigureAwait(false);
+        
+        // Wait for Blazor to fully render the content in the extraction container
+        await Task.Delay(250).ConfigureAwait(false);
 
-        // Now render the NEW content that needs to be extracted
-        CurrentContent = _originalContent;
-        await InvokeAsync(StateHasChanged).ConfigureAwait(false);
-
-        // Wait for Blazor to fully render the new content in the DOM
-        await Task.Delay(200).ConfigureAwait(false);
-
+        // Extract from the hidden extraction container
         var structure = await _jsModule
-          .InvokeAsync<DomStructure>("extractStructure", [_containerId])
+          .InvokeAsync<DomStructure>("extractStructure", [$"{_containerId}-extract"])
           .ConfigureAwait(false);
 
-        _operations = DomParsingService.ParseDomStructure(structure);
+        _operations = _domParser.ParseDomStructure(structure);
         _totalChars = _operations.Count(static op => op.Type == OperationType.Char);
-
+        
         // Clear extraction flag
         _isExtracting = false;
+        await InvokeAsync(StateHasChanged).ConfigureAwait(false);
       }
       catch (Exception)
       {
@@ -147,11 +142,10 @@ public partial class Typewriter
           // On error, ensure content is restored
           _isRunning = false;
           await InvokeAsync(() =>
-            {
-              CurrentContent = _originalContent;
-              StateHasChanged();
-            })
-            .ConfigureAwait(false);
+          {
+            CurrentContent = _originalContent;
+            StateHasChanged();
+          }).ConfigureAwait(false);
           await OnComplete.InvokeAsync().ConfigureAwait(false);
         }
       },
@@ -238,11 +232,10 @@ public partial class Typewriter
           // On unexpected error, ensure content is restored
           _isRunning = false;
           await InvokeAsync(() =>
-            {
-              CurrentContent = _originalContent;
-              StateHasChanged();
-            })
-            .ConfigureAwait(false);
+          {
+            CurrentContent = _originalContent;
+            StateHasChanged();
+          }).ConfigureAwait(false);
           await OnComplete.InvokeAsync().ConfigureAwait(false);
         }
       },
@@ -369,31 +362,27 @@ public partial class Typewriter
     }
 
     // Fire seek event
-    await OnSeek
-      .InvokeAsync(
-        new TypewriterSeekEventArgs(
-          Position: normalizedPosition,
-          TargetChar: _currentCharCount,
-          TotalChars: _totalChars,
-          Percent: _totalChars > 0 ? (_currentCharCount / (double)_totalChars) * 100 : 0,
-          WasRunning: wasRunning,
-          CanResume: !atStart && !atEnd,
-          AtStart: atStart,
-          AtEnd: atEnd
-        )
+    await OnSeek.InvokeAsync(
+      new TypewriterSeekEventArgs(
+        Position: normalizedPosition,
+        TargetChar: _currentCharCount,
+        TotalChars: _totalChars,
+        Percent: _totalChars > 0 ? (_currentCharCount / (double)_totalChars) * 100 : 0,
+        WasRunning: wasRunning,
+        CanResume: !atStart && !atEnd,
+        AtStart: atStart,
+        AtEnd: atEnd
       )
-      .ConfigureAwait(false);
+    ).ConfigureAwait(false);
 
     // Fire progress event
-    await OnProgress
-      .InvokeAsync(
-        new TypewriterProgressEventArgs(
-          _currentCharCount,
-          _totalChars,
-          _totalChars > 0 ? (_currentCharCount / (double)_totalChars) * 100 : 0
-        )
+    await OnProgress.InvokeAsync(
+      new TypewriterProgressEventArgs(
+        _currentCharCount,
+        _totalChars,
+        _totalChars > 0 ? (_currentCharCount / (double)_totalChars) * 100 : 0
       )
-      .ConfigureAwait(false);
+    ).ConfigureAwait(false);
 
     // If at end, fire complete event
     if (atEnd)

@@ -1,5 +1,15 @@
 @namespace BlazorFastTypewriter
 
+@* Hidden container for extraction - ensures content is in DOM but not visible *@
+@if (_isExtracting && _originalContent is not null)
+{
+    <div style="position: absolute; left: -9999px; visibility: hidden;">
+        <div data-typewriter-id="@(_containerId)-extract">
+            @_originalContent
+        </div>
+    </div>
+}
+
 <div @ref="_containerRef" 
      data-typewriter-id="@_containerId"
      class="type-writer-container" 

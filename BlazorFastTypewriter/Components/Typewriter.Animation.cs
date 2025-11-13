@@ -20,29 +20,24 @@ public partial class Typewriter
 
     try
     {
-      // Set extraction flag to hide content during rebuild
+      // Set extraction flag to render content in hidden extraction container
       _isExtracting = true;
-
-      // Clear and re-render to ensure fresh content
-      CurrentContent = null;
       await InvokeAsync(StateHasChanged).ConfigureAwait(false);
-      await Task.Delay(50).ConfigureAwait(false);
+      
+      // Wait for Blazor to render the content in the extraction container
+      await Task.Delay(250).ConfigureAwait(false);
 
-      CurrentContent = _originalContent;
-      await InvokeAsync(StateHasChanged).ConfigureAwait(false);
-      await Task.Delay(200).ConfigureAwait(false);
-
-      var structure = await _jsModule
-        .InvokeAsync<DomStructure>("extractStructure", [_containerId])
+      var structure = await _jsModule.InvokeAsync<DomStructure>("extractStructure", [$"{_containerId}-extract"])
         .ConfigureAwait(false);
 
       if (structure is not null)
       {
-        _operations = DomParsingService.ParseDomStructure(structure);
+        _operations = _domParser.ParseDomStructure(structure);
         _totalChars = _operations.Count(static op => op.Type == OperationType.Char);
       }
-
+      
       _isExtracting = false;
+      await InvokeAsync(StateHasChanged).ConfigureAwait(false);
     }
     catch (Exception)
     {
@@ -107,11 +102,10 @@ public partial class Typewriter
     // Update content
     var html = currentHtml.ToString();
     await InvokeAsync(() =>
-      {
-        CurrentContent = builder => builder.AddMarkupContent(0, html);
-        StateHasChanged();
-      })
-      .ConfigureAwait(false);
+    {
+      CurrentContent = builder => builder.AddMarkupContent(0, html);
+      StateHasChanged();
+    }).ConfigureAwait(false);
   }
 
   /// <summary>
@@ -182,23 +176,20 @@ public partial class Typewriter
       // Update content via InvokeAsync to ensure thread safety
       var html = currentHtml.ToString();
       await InvokeAsync(() =>
-        {
-          CurrentContent = builder => builder.AddMarkupContent(0, html);
-          StateHasChanged();
-        })
-        .ConfigureAwait(false);
+      {
+        CurrentContent = builder => builder.AddMarkupContent(0, html);
+        StateHasChanged();
+      }).ConfigureAwait(false);
 
       if (op.Type == OperationType.Char && _currentCharCount % 10 == 0 && totalChars > 0)
       {
-        await OnProgress
-          .InvokeAsync(
-            new TypewriterProgressEventArgs(
-              _currentCharCount,
-              totalChars,
-              (_currentCharCount / (double)totalChars) * 100
-            )
+        await OnProgress.InvokeAsync(
+          new TypewriterProgressEventArgs(
+            _currentCharCount,
+            totalChars,
+            (_currentCharCount / (double)totalChars) * 100
           )
-          .ConfigureAwait(false);
+        ).ConfigureAwait(false);
       }
 
       if (op.Type == OperationType.Char)
@@ -213,18 +204,17 @@ public partial class Typewriter
 
     _isRunning = false;
     _currentCharCount = totalChars;
-
+    
     // Always fire final progress event at 100%
-    await OnProgress
-      .InvokeAsync(new TypewriterProgressEventArgs(totalChars, totalChars, 100.0))
-      .ConfigureAwait(false);
-
+    await OnProgress.InvokeAsync(
+      new TypewriterProgressEventArgs(totalChars, totalChars, 100.0)
+    ).ConfigureAwait(false);
+    
     await InvokeAsync(() =>
-      {
-        CurrentContent = _originalContent;
-        StateHasChanged();
-      })
-      .ConfigureAwait(false);
+    {
+      CurrentContent = _originalContent;
+      StateHasChanged();
+    }).ConfigureAwait(false);
     await OnComplete.InvokeAsync().ConfigureAwait(false);
   }
 }
