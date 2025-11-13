@@ -194,7 +194,18 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
   /// </summary>
   public async Task Start()
   {
-    if (_isRunning || ChildContent is null)
+    if (ChildContent is null)
+      return;
+
+    // If paused (e.g., from seek), just resume instead of restarting
+    if (_isRunning && _isPaused)
+    {
+      await Resume();
+      return;
+    }
+
+    // If already running and not paused, don't restart
+    if (_isRunning)
       return;
 
     _generation++;
@@ -327,23 +338,9 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
     _isPaused = false;
     await OnResume.InvokeAsync();
     await InvokeAsync(StateHasChanged);
-
-    var gen = _generation;
-    var duration = Math.Max(
-      MinDuration,
-      Math.Min(MaxDuration, (int)Math.Round((_totalChars / (double)Speed) * 1000))
-    );
-    var delay = _totalChars > 0 ? Math.Max(8, duration / _totalChars) : 0;
-
-    _ = Task.Run(
-      () =>
-        AnimateAsync(
-          gen,
-          delay,
-          _totalChars,
-          _cancellationTokenSource?.Token ?? CancellationToken.None
-        )
-    );
+    
+    // The existing AnimateAsync task will continue automatically
+    // when it checks _isPaused in its loop - no need to start a new task
   }
 
   /// <summary>
