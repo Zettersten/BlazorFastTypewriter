@@ -1,0 +1,91 @@
+@page "/ai-chat"
+@using BlazorFastTypewriter
+
+<PageTitle>AI Chat Demo - BlazorFastTypewriter</PageTitle>
+
+<div class="page-header">
+    <h1>AI Chat Streaming Demo</h1>
+    <p class="page-subtitle">Simulate an AI assistant streaming responses in real-time</p>
+</div>
+
+<section class="demo-section">
+    <h2>Interactive Chat</h2>
+    <p>Simulate an AI assistant streaming responses in real-time, perfect for chat applications and interactive experiences.</p>
+    
+    <div class="demo-container">
+        <div class="chat-container">
+            <div class="chat-messages">
+                @foreach (var message in _chatMessages)
+                {
+                    <div class="chat-message @(message.IsUser ? "user-message" : "ai-message")">
+                        <div class="message-header">
+                            <strong>@(message.IsUser ? "You" : "AI Assistant")</strong>
+                            <span class="message-time">@message.Time.ToString("HH:mm")</span>
+                        </div>
+                        @if (message.IsUser)
+                        {
+                            <div class="message-content">@message.Content</div>
+                        }
+                        else if (message.TypewriterContent is not null)
+                        {
+                            <div class="message-content">
+                                <Typewriter Autostart="@message.ShouldAutoStart"
+                                            Speed="@_aiChatSpeed"
+                                            OnComplete="@(() => HandleAiMessageComplete(message))">
+                                    @message.TypewriterContent
+                                </Typewriter>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+            
+            <div class="chat-input-container">
+                <div class="speed-control">
+                    <label>
+                        AI Response Speed: <strong>@_aiChatSpeed</strong> chars/sec
+                        <input type="range" min="50" max="300" step="25" value="@_aiChatSpeed" @onchange="HandleAiSpeedChange" />
+                    </label>
+                </div>
+                <div class="chat-input">
+                    <input type="text" 
+                           @bind="_chatInput" 
+                           @bind:event="oninput"
+                           @onkeydown="HandleChatKeyDown"
+                           placeholder="Ask the AI assistant anything..."
+                           disabled="@_isAiTyping" />
+                    <button @onclick="SendChatMessage" disabled="@(string.IsNullOrWhiteSpace(_chatInput) || _isAiTyping)">
+                        @(_isAiTyping ? "AI is typing..." : "Send")
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <CodeSample>
+        <pre><code>@@foreach (var message in _messages)
+{
+    &lt;div class="message @@message.Sender"&gt;
+        @@if (message.IsAi)
+        {
+            &lt;Typewriter Speed="150" Autostart="true"&gt;
+                @@message.Content
+            &lt;/Typewriter&gt;
+        }
+        else
+        {
+            @@message.Content
+        }
+    &lt;/div&gt;
+}
+
+@@code {
+    private async Task AddAiMessage(string content)
+    {
+        var message = new Message { IsAi = true, Content = content };
+        _messages.Add(message);
+        await InvokeAsync(StateHasChanged);
+    }
+}</code></pre>
+    </CodeSample>
+</section>

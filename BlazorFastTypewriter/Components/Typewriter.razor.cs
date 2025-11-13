@@ -601,6 +601,24 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
   {
     var currentHtml = new StringBuilder(1024);
 
+    // Rebuild existing content up to current index (for resume support)
+    for (var i = 0; i < _currentIndex; i++)
+    {
+      var op = _operations[i];
+      switch (op.Type)
+      {
+        case OperationType.OpenTag:
+          currentHtml.Append(op.TagHtml);
+          break;
+        case OperationType.Char:
+          currentHtml.Append(op.Char);
+          break;
+        case OperationType.CloseTag:
+          currentHtml.Append(op.TagHtml);
+          break;
+      }
+    }
+
     for (var i = _currentIndex; i < _operations.Length; i++)
     {
       if (generation != _generation || !_isRunning || cancellationToken.IsCancellationRequested)
