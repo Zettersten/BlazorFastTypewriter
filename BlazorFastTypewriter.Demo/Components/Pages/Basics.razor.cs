@@ -6,12 +6,14 @@ public partial class Basics
 {
   // Basic
   private Typewriter? _basicTypewriter;
+
   private bool _basicRunning;
   private bool _basicPaused;
   private TypewriterProgressInfo? _basicProgress;
 
   // Speed
   private Typewriter? _speedTypewriter;
+
   private bool _speedRunning;
   private bool _speedPaused;
   private int _speed = 100;
@@ -19,12 +21,14 @@ public partial class Basics
 
   // HTML
   private Typewriter? _htmlTypewriter;
+
   private bool _htmlRunning;
   private bool _htmlPaused;
   private TypewriterProgressInfo? _htmlProgress;
 
   // RTL
   private Typewriter? _rtlTypewriter;
+
   private bool _rtlRunning;
   private bool _rtlPaused;
   private TypewriterProgressInfo? _rtlProgress;
@@ -232,25 +236,45 @@ public partial class Basics
   // Progress handlers
   private void HandleBasicProgress(TypewriterProgressEventArgs args)
   {
-    _basicProgress = new TypewriterProgressInfo(args.Current, args.Total, args.Percent, args.Current / (double)args.Total);
+    _basicProgress = new TypewriterProgressInfo(
+      args.Current,
+      args.Total,
+      args.Percent,
+      args.Current / (double)args.Total
+    );
     StateHasChanged();
   }
 
   private void HandleSpeedProgress(TypewriterProgressEventArgs args)
   {
-    _speedProgress = new TypewriterProgressInfo(args.Current, args.Total, args.Percent, args.Current / (double)args.Total);
+    _speedProgress = new TypewriterProgressInfo(
+      args.Current,
+      args.Total,
+      args.Percent,
+      args.Current / (double)args.Total
+    );
     StateHasChanged();
   }
 
   private void HandleHtmlProgress(TypewriterProgressEventArgs args)
   {
-    _htmlProgress = new TypewriterProgressInfo(args.Current, args.Total, args.Percent, args.Current / (double)args.Total);
+    _htmlProgress = new TypewriterProgressInfo(
+      args.Current,
+      args.Total,
+      args.Percent,
+      args.Current / (double)args.Total
+    );
     StateHasChanged();
   }
 
   private void HandleRtlProgress(TypewriterProgressEventArgs args)
   {
-    _rtlProgress = new TypewriterProgressInfo(args.Current, args.Total, args.Percent, args.Current / (double)args.Total);
+    _rtlProgress = new TypewriterProgressInfo(
+      args.Current,
+      args.Total,
+      args.Percent,
+      args.Current / (double)args.Total
+    );
     StateHasChanged();
   }
 

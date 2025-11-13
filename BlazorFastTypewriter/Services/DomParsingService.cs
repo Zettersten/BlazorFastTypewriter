@@ -1,7 +1,6 @@
 using System.Buffers;
 using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Text.RegularExpressions;
 
 namespace BlazorFastTypewriter.Services;
@@ -19,7 +18,7 @@ internal sealed partial class DomParsingService
   /// <summary>
   /// Parses a DOM structure into an immutable array of operations.
   /// </summary>
-  public ImmutableArray<NodeOperation> ParseDomStructure(DomStructure structure)
+  public static ImmutableArray<NodeOperation> ParseDomStructure(DomStructure structure)
   {
     if (structure.nodes is not { Length: > 0 })
       return [];
@@ -157,7 +156,11 @@ internal enum OperationType : byte
 /// Represents a single operation in the animation sequence.
 /// Optimized using readonly record struct for minimal allocations.
 /// </summary>
-internal readonly record struct NodeOperation(OperationType Type, char Char = default, string TagHtml = "");
+internal readonly record struct NodeOperation(
+  OperationType Type,
+  char Char = default,
+  string TagHtml = ""
+);
 
 /// <summary>
 /// Represents a DOM structure from JavaScript interop.

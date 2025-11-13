@@ -1,11 +1,10 @@
-using Microsoft.AspNetCore.Components;
-
 namespace BlazorFastTypewriter.Demo.Components.Pages;
 
 public partial class PlaybackControls
 {
   // Controls
   private Typewriter? _controlTypewriter;
+
   private bool _controlRunning;
   private bool _controlPaused;
   private string _controlStatus = "Ready";
@@ -13,6 +12,7 @@ public partial class PlaybackControls
 
   // Progress
   private Typewriter? _progressTypewriter;
+
   private bool _progressRunning;
   private double _progressPercent;
   private string _progressText = "Ready";
@@ -94,7 +94,12 @@ public partial class PlaybackControls
 
   private void HandleControlProgress(TypewriterProgressEventArgs args)
   {
-    _controlProgress = new TypewriterProgressInfo(args.Current, args.Total, args.Percent, args.Current / (double)args.Total);
+    _controlProgress = new TypewriterProgressInfo(
+      args.Current,
+      args.Total,
+      args.Percent,
+      args.Current / (double)args.Total
+    );
     StateHasChanged();
   }
 

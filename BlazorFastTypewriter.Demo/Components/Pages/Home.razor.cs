@@ -1,5 +1,3 @@
-using Microsoft.AspNetCore.Components;
-
 namespace BlazorFastTypewriter.Demo.Components.Pages;
 
 public partial class Home
@@ -9,6 +7,7 @@ public partial class Home
 
   // Basic
   private Typewriter? _basicTypewriter;
+
   private bool _basicRunning;
   private bool _basicPaused;
   private TypewriterProgressInfo? _basicProgress;

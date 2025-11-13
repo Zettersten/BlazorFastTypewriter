@@ -1,7 +1,5 @@
-using System.Collections.Immutable;
 using System.Text;
 using BlazorFastTypewriter.Services;
-using Microsoft.AspNetCore.Components;
 
 namespace BlazorFastTypewriter;
 
@@ -25,12 +23,13 @@ public partial class Typewriter
       await InvokeAsync(StateHasChanged).ConfigureAwait(false);
       await Task.Delay(100).ConfigureAwait(false);
 
-      var structure = await _jsModule.InvokeAsync<DomStructure>("extractStructure", [_containerId])
+      var structure = await _jsModule
+        .InvokeAsync<DomStructure>("extractStructure", [_containerId])
         .ConfigureAwait(false);
 
       if (structure is not null)
       {
-        _operations = _domParser.ParseDomStructure(structure);
+        _operations = DomParsingService.ParseDomStructure(structure);
         _totalChars = _operations.Count(static op => op.Type == OperationType.Char);
       }
     }
@@ -96,10 +95,11 @@ public partial class Typewriter
     // Update content
     var html = currentHtml.ToString();
     await InvokeAsync(() =>
-    {
-      CurrentContent = builder => builder.AddMarkupContent(0, html);
-      StateHasChanged();
-    }).ConfigureAwait(false);
+      {
+        CurrentContent = builder => builder.AddMarkupContent(0, html);
+        StateHasChanged();
+      })
+      .ConfigureAwait(false);
   }
 
   /// <summary>
@@ -124,9 +124,11 @@ public partial class Typewriter
         case OperationType.OpenTag:
           currentHtml.Append(op.TagHtml);
           break;
+
         case OperationType.Char:
           currentHtml.Append(op.Char);
           break;
+
         case OperationType.CloseTag:
           currentHtml.Append(op.TagHtml);
           break;
@@ -170,20 +172,23 @@ public partial class Typewriter
       // Update content via InvokeAsync to ensure thread safety
       var html = currentHtml.ToString();
       await InvokeAsync(() =>
-      {
-        CurrentContent = builder => builder.AddMarkupContent(0, html);
-        StateHasChanged();
-      }).ConfigureAwait(false);
+        {
+          CurrentContent = builder => builder.AddMarkupContent(0, html);
+          StateHasChanged();
+        })
+        .ConfigureAwait(false);
 
       if (op.Type == OperationType.Char && _currentCharCount % 10 == 0 && totalChars > 0)
       {
-        await OnProgress.InvokeAsync(
-          new TypewriterProgressEventArgs(
-            _currentCharCount,
-            totalChars,
-            (_currentCharCount / (double)totalChars) * 100
+        await OnProgress
+          .InvokeAsync(
+            new TypewriterProgressEventArgs(
+              _currentCharCount,
+              totalChars,
+              (_currentCharCount / (double)totalChars) * 100
+            )
           )
-        ).ConfigureAwait(false);
+          .ConfigureAwait(false);
       }
 
       if (op.Type == OperationType.Char)
@@ -198,17 +203,18 @@ public partial class Typewriter
 
     _isRunning = false;
     _currentCharCount = totalChars;
-    
+
     // Always fire final progress event at 100%
-    await OnProgress.InvokeAsync(
-      new TypewriterProgressEventArgs(totalChars, totalChars, 100.0)
-    ).ConfigureAwait(false);
-    
+    await OnProgress
+      .InvokeAsync(new TypewriterProgressEventArgs(totalChars, totalChars, 100.0))
+      .ConfigureAwait(false);
+
     await InvokeAsync(() =>
-    {
-      CurrentContent = _originalContent;
-      StateHasChanged();
-    }).ConfigureAwait(false);
+      {
+        CurrentContent = _originalContent;
+        StateHasChanged();
+      })
+      .ConfigureAwait(false);
     await OnComplete.InvokeAsync().ConfigureAwait(false);
   }
 }

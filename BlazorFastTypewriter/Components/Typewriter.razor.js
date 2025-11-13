@@ -13,7 +13,7 @@ export function checkReducedMotion() {
   if (typeof window === 'undefined' || !window.matchMedia) {
     return false;
   }
-  
+
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
@@ -29,7 +29,7 @@ export function extractStructure(containerId) {
   }
 
   const element = document.querySelector(`[data-typewriter-id="${containerId}"]`);
-  
+
   if (!element || !(element instanceof HTMLElement)) {
     return { nodes: [] };
   }
@@ -44,12 +44,12 @@ export function extractStructure(containerId) {
     // Fast path: text nodes
     if (node.nodeType === Node.TEXT_NODE) {
       const text = node.textContent;
-      
+
       // Skip empty or whitespace-only text nodes using regex test
       if (!text || !/\S/.test(text)) {
         return null;
       }
-      
+
       return {
         type: 'text',
         text
@@ -60,10 +60,10 @@ export function extractStructure(containerId) {
     if (node.nodeType === Node.ELEMENT_NODE) {
       const element = /** @type {Element} */ (node);
       const tagName = element.tagName.toLowerCase();
-      
+
       // Use Object.create(null) for better performance (no prototype chain)
       const attributes = Object.create(null);
-      
+
       // Modern iteration over attributes
       for (const { name, value } of element.attributes) {
         attributes[name] = value;

@@ -13,6 +13,7 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
 {
   // Private fields - optimized with modern patterns
   private int _generation;
+
   private bool _isPaused;
   private bool _isRunning;
   private int _currentIndex;
@@ -161,14 +162,17 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
 
     try
     {
-      _jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>(
-        "import",
-        "./_content/BlazorFastTypewriter/Components/Typewriter.razor.js"
-      ).ConfigureAwait(false);
+      _jsModule = await JSRuntime
+        .InvokeAsync<IJSObjectReference>(
+          "import",
+          "./_content/BlazorFastTypewriter/Components/Typewriter.razor.js"
+        )
+        .ConfigureAwait(false);
 
       if (RespectMotionPreference)
       {
-        _prefersReducedMotion = await _jsModule.InvokeAsync<bool>("checkReducedMotion")
+        _prefersReducedMotion = await _jsModule
+          .InvokeAsync<bool>("checkReducedMotion")
           .ConfigureAwait(false);
       }
 
