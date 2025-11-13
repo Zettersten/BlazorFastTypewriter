@@ -16,6 +16,8 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
   private bool _isPaused;
   private bool _isRunning;
   private int _currentIndex;
+  private int _totalChars;
+  private int _currentCharCount;
   private ImmutableArray<NodeOperation> _operations = [];
   private RenderFragment? _originalContent;
   private CancellationTokenSource? _cancellationTokenSource;
@@ -116,6 +118,12 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
   public EventCallback<TypewriterProgressEventArgs> OnProgress { get; set; }
 
   /// <summary>
+  /// Event callback fired when seeking to a new position.
+  /// </summary>
+  [Parameter]
+  public EventCallback<TypewriterSeekEventArgs> OnSeek { get; set; }
+
+  /// <summary>
   /// Gets the current rendered content.
   /// </summary>
   private RenderFragment? CurrentContent { get; set; }
@@ -191,6 +199,7 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
 
     _generation++;
     _currentIndex = 0;
+    _currentCharCount = 0;
     _isPaused = false;
 
     // Capture original content if not already set
@@ -211,12 +220,14 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
 
         var structure = await _jsModule.InvokeAsync<DomStructure>("extractStructure", _containerId);
         _operations = ParseDomStructure(structure);
+        _totalChars = _operations.Count(static op => op.Type == OperationType.Char);
       }
       catch (Exception)
       {
         // Fallback: Create simple text-based operations without DOM parsing
         // This allows animation to work in test environments or when JS fails
         _operations = [];
+        _totalChars = 0;
       }
       
       // If operations are still empty after parsing, skip animation and just show content
@@ -265,19 +276,18 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
     CurrentContent = null;
     await InvokeAsync(StateHasChanged);
 
-    var totalChars = _operations.Count(static op => op.Type == OperationType.Char);
     var duration = Math.Max(
       MinDuration,
-      Math.Min(MaxDuration, (int)Math.Round((totalChars / (double)Speed) * 1000))
+      Math.Min(MaxDuration, (int)Math.Round((_totalChars / (double)Speed) * 1000))
     );
-    var delay = totalChars > 0 ? Math.Max(8, duration / totalChars) : 0;
+    var delay = _totalChars > 0 ? Math.Max(8, duration / _totalChars) : 0;
 
     // Run animation in background with error handling
     _ = Task.Run(async () =>
     {
       try
       {
-        await AnimateAsync(gen, delay, totalChars, ct);
+        await AnimateAsync(gen, delay, _totalChars, ct);
       }
       catch (Exception)
       {
@@ -319,19 +329,18 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
     await InvokeAsync(StateHasChanged);
 
     var gen = _generation;
-    var totalChars = _operations.Count(static op => op.Type == OperationType.Char);
     var duration = Math.Max(
       MinDuration,
-      Math.Min(MaxDuration, (int)Math.Round((totalChars / (double)Speed) * 1000))
+      Math.Min(MaxDuration, (int)Math.Round((_totalChars / (double)Speed) * 1000))
     );
-    var delay = totalChars > 0 ? Math.Max(8, duration / totalChars) : 0;
+    var delay = _totalChars > 0 ? Math.Max(8, duration / _totalChars) : 0;
 
     _ = Task.Run(
       () =>
         AnimateAsync(
           gen,
           delay,
-          totalChars,
+          _totalChars,
           _cancellationTokenSource?.Token ?? CancellationToken.None
         )
     );
@@ -349,6 +358,7 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
     _isRunning = false;
     _isPaused = false;
     _currentIndex = 0;
+    _currentCharCount = _totalChars;
 
     CurrentContent = _originalContent;
     _cancellationTokenSource?.Cancel();
@@ -366,6 +376,8 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
     _isRunning = false;
     _isPaused = false;
     _currentIndex = 0;
+    _currentCharCount = 0;
+    _totalChars = 0;
     _operations = [];
     CurrentContent = null;
     _cancellationTokenSource?.Cancel();
@@ -395,6 +407,191 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
     await Reset();
   }
 
+  /// <summary>
+  /// Seeks to a specific position in the animation (0.0 to 1.0).
+  /// </summary>
+  /// <param name="position">Position from 0.0 (start) to 1.0 (end).</param>
+  public async Task Seek(double position)
+  {
+    if (_originalContent is null)
+      return;
+
+    // Ensure operations are built
+    if (_operations.Length == 0)
+    {
+      await RebuildFromOriginal();
+    }
+
+    // Normalize position
+    var normalizedPosition = Math.Max(0, Math.Min(1, position));
+    
+    // Remember if animation was running
+    var wasRunning = _isRunning && !_isPaused;
+    
+    // Pause if running, or set paused state if not running
+    if (wasRunning)
+    {
+      await Pause();
+    }
+    else if (!_isRunning)
+    {
+      _isRunning = true;
+      _isPaused = true;
+    }
+
+    // Calculate target character
+    var targetChar = (int)(normalizedPosition * _totalChars);
+    
+    // Build DOM to target
+    await BuildDOMToIndex(targetChar);
+
+    // Handle edge cases
+    var atStart = normalizedPosition == 0;
+    var atEnd = normalizedPosition == 1 || _currentCharCount >= _totalChars;
+    
+    if (atStart || atEnd)
+    {
+      _isRunning = false;
+      _isPaused = false;
+    }
+
+    // Fire seek event
+    await OnSeek.InvokeAsync(new TypewriterSeekEventArgs(
+      Position: normalizedPosition,
+      TargetChar: _currentCharCount,
+      TotalChars: _totalChars,
+      Percent: _totalChars > 0 ? (_currentCharCount / (double)_totalChars) * 100 : 0,
+      WasRunning: wasRunning,
+      CanResume: !atStart && !atEnd,
+      AtStart: atStart,
+      AtEnd: atEnd
+    ));
+
+    // Fire progress event
+    await OnProgress.InvokeAsync(new TypewriterProgressEventArgs(
+      _currentCharCount,
+      _totalChars,
+      _totalChars > 0 ? (_currentCharCount / (double)_totalChars) * 100 : 0
+    ));
+
+    // If at end, fire complete event
+    if (atEnd)
+    {
+      await OnComplete.InvokeAsync();
+    }
+  }
+
+  /// <summary>
+  /// Seeks to a specific percentage (0 to 100).
+  /// </summary>
+  /// <param name="percent">Percentage from 0 to 100.</param>
+  public async Task SeekToPercent(double percent)
+  {
+    await Seek(percent / 100);
+  }
+
+  /// <summary>
+  /// Seeks to a specific character index.
+  /// </summary>
+  /// <param name="charIndex">Character index to seek to.</param>
+  public async Task SeekToChar(int charIndex)
+  {
+    if (_totalChars == 0)
+      return;
+    await Seek(charIndex / (double)_totalChars);
+  }
+
+  /// <summary>
+  /// Gets the current progress information.
+  /// </summary>
+  /// <returns>Current progress state.</returns>
+  public TypewriterProgressInfo GetProgress()
+  {
+    return new TypewriterProgressInfo(
+      Current: _currentCharCount,
+      Total: _totalChars,
+      Percent: _totalChars > 0 ? (_currentCharCount / (double)_totalChars) * 100 : 0,
+      Position: _totalChars > 0 ? _currentCharCount / (double)_totalChars : 0
+    );
+  }
+
+  private async Task RebuildFromOriginal()
+  {
+    if (_originalContent is null || _jsModule is null || !_isInitialized)
+      return;
+
+    try
+    {
+      // Ensure content is rendered
+      CurrentContent = _originalContent;
+      await InvokeAsync(StateHasChanged);
+      await Task.Delay(100);
+
+      var structure = await _jsModule.InvokeAsync<DomStructure>("extractStructure", _containerId);
+      _operations = ParseDomStructure(structure);
+      _totalChars = _operations.Count(static op => op.Type == OperationType.Char);
+    }
+    catch (Exception)
+    {
+      _operations = [];
+      _totalChars = 0;
+    }
+  }
+
+  private async Task BuildDOMToIndex(int targetChar)
+  {
+    // Clear and reset
+    _currentCharCount = 0;
+    _currentIndex = 0;
+
+    if (targetChar <= 0)
+    {
+      CurrentContent = null;
+      await InvokeAsync(StateHasChanged);
+      return;
+    }
+
+    // Build HTML up to target character
+    var currentHtml = new StringBuilder(1024);
+    var charCount = 0;
+
+    for (var i = 0; i < _operations.Length; i++)
+    {
+      var op = _operations[i];
+
+      switch (op.Type)
+      {
+        case OperationType.OpenTag:
+          currentHtml.Append(op.TagHtml);
+          break;
+
+        case OperationType.Char:
+          if (charCount >= targetChar)
+            goto Done;
+          currentHtml.Append(op.Char);
+          charCount++;
+          break;
+
+        case OperationType.CloseTag:
+          currentHtml.Append(op.TagHtml);
+          break;
+      }
+
+      _currentIndex = i + 1;
+    }
+
+    Done:
+    _currentCharCount = charCount;
+
+    // Update content
+    var html = currentHtml.ToString();
+    await InvokeAsync(() =>
+    {
+      CurrentContent = builder => builder.AddMarkupContent(0, html);
+      StateHasChanged();
+    });
+  }
+
   private async Task AnimateAsync(
     int generation,
     int baseDelay,
@@ -402,7 +599,6 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
     CancellationToken cancellationToken
   )
   {
-    var charCount = 0;
     var currentHtml = new StringBuilder(1024);
 
     for (var i = _currentIndex; i < _operations.Length; i++)
@@ -429,13 +625,15 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
 
         case OperationType.Char:
           currentHtml.Append(op.Char);
-          charCount++;
+          _currentCharCount++;
           break;
 
         case OperationType.CloseTag:
           currentHtml.Append(op.TagHtml);
           break;
       }
+
+      _currentIndex = i + 1;
 
       // Update content via InvokeAsync to ensure thread safety
       var html = currentHtml.ToString();
@@ -445,13 +643,13 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
         StateHasChanged();
       });
 
-      if (op.Type == OperationType.Char && charCount % 10 == 0 && totalChars > 0)
+      if (op.Type == OperationType.Char && _currentCharCount % 10 == 0 && totalChars > 0)
       {
         await OnProgress.InvokeAsync(
           new TypewriterProgressEventArgs(
-            charCount,
+            _currentCharCount,
             totalChars,
-            (charCount / (double)totalChars) * 100
+            (_currentCharCount / (double)totalChars) * 100
           )
         );
       }
@@ -467,6 +665,7 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
     }
 
     _isRunning = false;
+    _currentCharCount = totalChars;
     await InvokeAsync(() =>
     {
       CurrentContent = _originalContent;
@@ -648,3 +847,27 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
 /// Event arguments for progress events.
 /// </summary>
 public sealed record TypewriterProgressEventArgs(int Current, int Total, double Percent);
+
+/// <summary>
+/// Event arguments for seek events.
+/// </summary>
+public sealed record TypewriterSeekEventArgs(
+  double Position,
+  int TargetChar,
+  int TotalChars,
+  double Percent,
+  bool WasRunning,
+  bool CanResume,
+  bool AtStart,
+  bool AtEnd
+);
+
+/// <summary>
+/// Progress information returned by GetProgress().
+/// </summary>
+public sealed record TypewriterProgressInfo(
+  int Current,
+  int Total,
+  double Percent,
+  double Position
+);

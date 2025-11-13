@@ -147,6 +147,59 @@ builder.Services.AddRazorComponents()
 </Typewriter>
 ```
 
+**With seek/scrubbing functionality:**
+
+```razor
+<Typewriter @ref="_typewriter"
+            Speed="60"
+            OnSeek="HandleSeek"
+            OnProgress="HandleProgress">
+    <p>Content to animate with seek support...</p>
+</Typewriter>
+
+<label>
+    Position: @_position%
+    <input type="range" 
+           min="0" max="100" 
+           value="@_position" 
+           @oninput="HandleSeekInput" />
+</label>
+
+<button @onclick="() => SeekTo(0)">Start</button>
+<button @onclick="() => SeekTo(0.5)">50%</button>
+<button @onclick="() => SeekTo(1)">End</button>
+
+@code {
+    private Typewriter? _typewriter;
+    private double _position = 0;
+    
+    private async Task HandleSeekInput(ChangeEventArgs e)
+    {
+        if (double.TryParse(e.Value?.ToString(), out var value))
+        {
+            _position = value;
+            await _typewriter?.SeekToPercent(value);
+        }
+    }
+    
+    private async Task SeekTo(double position)
+    {
+        await _typewriter?.Seek(position);
+    }
+    
+    private void HandleSeek(TypewriterSeekEventArgs args)
+    {
+        _position = args.Percent;
+        Console.WriteLine($"Seeked to {args.Percent:F1}% - At {args.TargetChar}/{args.TotalChars} chars");
+    }
+    
+    private void HandleProgress(TypewriterProgressEventArgs args)
+    {
+        _position = args.Percent;
+    }
+}
+```
+
 ## Production Builds with Trimming & AOT
 
 Blazor Fast Typewriter is validated with trimming analyzers and Native AOT so you can ship the smallest possible payloads. When publishing your application run:
@@ -187,6 +240,10 @@ The library opts into invariant globalization to minimize ICU payload size. If y
 | `Task Reset()`             | Resets the component, clearing content and state. Fires `OnReset` event. |
 | `Task SetText(RenderFragment newContent)` | Replaces the content with a new `RenderFragment` and resets the component. |
 | `Task SetText(string html)` | Replaces the content with an HTML string and resets the component. |
+| `Task Seek(double position)` | Seeks to a specific position (0.0 to 1.0) in the animation. Pauses if currently animating. |
+| `Task SeekToPercent(double percent)` | Convenience method to seek to a percentage (0 to 100). |
+| `Task SeekToChar(int charIndex)` | Seeks to a specific character index. |
+| `TypewriterProgressInfo GetProgress()` | Returns current progress information including position, percent, and character counts. |
 
 ## Properties
 
@@ -195,13 +252,37 @@ The library opts into invariant globalization to minimize ICU payload size. If y
 | `IsRunning`                | `bool`    | Gets whether the component is currently animating. |
 | `IsPaused`                 | `bool`    | Gets whether the component is currently paused. |
 
-## TypewriterProgressEventArgs
+## Event Arguments
+
+### TypewriterProgressEventArgs
 
 Progress events provide the following information:
 
 - `Current` (`int`): Number of characters animated so far.
 - `Total` (`int`): Total number of characters to animate.
 - `Percent` (`double`): Percentage complete (0-100).
+
+### TypewriterSeekEventArgs
+
+Seek events provide the following information:
+
+- `Position` (`double`): Normalized position (0.0 to 1.0).
+- `TargetChar` (`int`): Character index that was seeked to.
+- `TotalChars` (`int`): Total number of characters.
+- `Percent` (`double`): Percentage of completion (0-100).
+- `WasRunning` (`bool`): Whether the animation was running before the seek.
+- `CanResume` (`bool`): Whether the animation can be resumed from this position.
+- `AtStart` (`bool`): Whether the seek landed at the start (position 0).
+- `AtEnd` (`bool`): Whether the seek landed at the end (position 1).
+
+### TypewriterProgressInfo
+
+Returned by `GetProgress()` with the following properties:
+
+- `Current` (`int`): Current character count.
+- `Total` (`int`): Total character count.
+- `Percent` (`double`): Percentage complete (0-100).
+- `Position` (`double`): Normalized position (0.0 to 1.0).
 
 ## Accessibility & Performance Tips
 

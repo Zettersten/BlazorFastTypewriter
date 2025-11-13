@@ -543,4 +543,283 @@ public class TypewriterTests : IDisposable
     // Assert
     cut.Instance.IsRunning.Should().BeFalse();
   }
+
+  // ==================== Seek Functionality Tests ====================
+
+  [Fact]
+  public async Task Seek_ToZero_ResetsToStart()
+  {
+    // Arrange
+    SetupLongTextStructure(50);
+    var cut = Render<Typewriter>(parameters =>
+      parameters
+        .Add(p => p.Autostart, false)
+        .Add(p => p.ChildContent, builder => builder.AddMarkupContent(0, "<p>Test content</p>"))
+    );
+
+    await Task.Delay(300);
+
+    // Act
+    await cut.Instance.Seek(0);
+
+    // Assert
+    cut.Instance.IsRunning.Should().BeFalse();
+    cut.Instance.IsPaused.Should().BeFalse();
+  }
+
+  [Fact]
+  public async Task Seek_ToOne_CompletesAnimation()
+  {
+    // Arrange
+    SetupLongTextStructure(50);
+    var cut = Render<Typewriter>(parameters =>
+      parameters
+        .Add(p => p.Autostart, false)
+        .Add(p => p.ChildContent, builder => builder.AddMarkupContent(0, "<p>Test content</p>"))
+    );
+
+    await Task.Delay(300);
+
+    // Act
+    await cut.Instance.Seek(1);
+    await Task.Delay(100);
+
+    // Assert
+    cut.Instance.IsRunning.Should().BeFalse();
+    cut.Instance.IsPaused.Should().BeFalse();
+  }
+
+  [Fact]
+  public async Task Seek_ToMiddle_PausesAtPosition()
+  {
+    // Arrange
+    SetupLongTextStructure(100);
+    var cut = Render<Typewriter>(parameters =>
+      parameters
+        .Add(p => p.Autostart, false)
+        .Add(p => p.ChildContent, builder => builder.AddMarkupContent(0, "<p>Test content</p>"))
+    );
+
+    await Task.Delay(300);
+
+    // Act
+    await cut.Instance.Seek(0.5);
+
+    // Assert
+    cut.Instance.IsRunning.Should().BeTrue();
+    cut.Instance.IsPaused.Should().BeTrue();
+  }
+
+  [Fact]
+  public async Task SeekToPercent_ConvertsCorrectly()
+  {
+    // Arrange
+    SetupLongTextStructure(50);
+    TypewriterSeekEventArgs? seekArgs = null;
+    var cut = Render<Typewriter>(parameters =>
+      parameters
+        .Add(p => p.Autostart, false)
+        .Add(p => p.ChildContent, builder => builder.AddMarkupContent(0, "<p>Test content</p>"))
+        .Add(
+          p => p.OnSeek,
+          EventCallback.Factory.Create<TypewriterSeekEventArgs>(this, args => seekArgs = args)
+        )
+    );
+
+    await Task.Delay(300);
+
+    // Act
+    await cut.Instance.SeekToPercent(50);
+
+    // Assert - Should seek to 50% (position 0.5)
+    seekArgs.Should().NotBeNull();
+    seekArgs!.Percent.Should().BeApproximately(50, 5); // Allow 5% tolerance
+  }
+
+  [Fact]
+  public async Task SeekToChar_CalculatesPositionCorrectly()
+  {
+    // Arrange
+    SetupLongTextStructure(100);
+    TypewriterSeekEventArgs? seekArgs = null;
+    var cut = Render<Typewriter>(parameters =>
+      parameters
+        .Add(p => p.Autostart, false)
+        .Add(p => p.ChildContent, builder => builder.AddMarkupContent(0, "<p>Test content</p>"))
+        .Add(
+          p => p.OnSeek,
+          EventCallback.Factory.Create<TypewriterSeekEventArgs>(this, args => seekArgs = args)
+        )
+    );
+
+    await Task.Delay(300);
+
+    // Act
+    await cut.Instance.SeekToChar(50);
+
+    // Assert - Should seek to approximately 50 characters
+    seekArgs.Should().NotBeNull();
+    seekArgs!.TargetChar.Should().BeCloseTo(50, 10); // Allow tolerance
+  }
+
+  [Fact]
+  public async Task OnSeek_EventFires_WithCorrectData()
+  {
+    // Arrange
+    SetupLongTextStructure(100);
+    TypewriterSeekEventArgs? seekArgs = null;
+    var cut = Render<Typewriter>(parameters =>
+      parameters
+        .Add(p => p.Autostart, false)
+        .Add(p => p.ChildContent, builder => builder.AddMarkupContent(0, "<p>Test content</p>"))
+        .Add(
+          p => p.OnSeek,
+          EventCallback.Factory.Create<TypewriterSeekEventArgs>(this, args => seekArgs = args)
+        )
+    );
+
+    await Task.Delay(300);
+
+    // Act
+    await cut.Instance.Seek(0.75);
+
+    // Assert
+    seekArgs.Should().NotBeNull();
+    seekArgs!.Position.Should().Be(0.75);
+    seekArgs.AtStart.Should().BeFalse();
+    seekArgs.AtEnd.Should().BeFalse();
+  }
+
+  [Fact]
+  public async Task OnSeek_AtStart_SetsAtStartFlag()
+  {
+    // Arrange
+    SetupLongTextStructure(50);
+    TypewriterSeekEventArgs? seekArgs = null;
+    var cut = Render<Typewriter>(parameters =>
+      parameters
+        .Add(p => p.Autostart, false)
+        .Add(p => p.ChildContent, builder => builder.AddMarkupContent(0, "<p>Test content</p>"))
+        .Add(
+          p => p.OnSeek,
+          EventCallback.Factory.Create<TypewriterSeekEventArgs>(this, args => seekArgs = args)
+        )
+    );
+
+    await Task.Delay(300);
+
+    // Act
+    await cut.Instance.Seek(0);
+
+    // Assert
+    seekArgs.Should().NotBeNull();
+    seekArgs!.AtStart.Should().BeTrue();
+    seekArgs.AtEnd.Should().BeFalse();
+  }
+
+  [Fact]
+  public async Task OnSeek_AtEnd_SetsAtEndFlag()
+  {
+    // Arrange
+    SetupLongTextStructure(50);
+    TypewriterSeekEventArgs? seekArgs = null;
+    var cut = Render<Typewriter>(parameters =>
+      parameters
+        .Add(p => p.Autostart, false)
+        .Add(p => p.ChildContent, builder => builder.AddMarkupContent(0, "<p>Test content</p>"))
+        .Add(
+          p => p.OnSeek,
+          EventCallback.Factory.Create<TypewriterSeekEventArgs>(this, args => seekArgs = args)
+        )
+    );
+
+    await Task.Delay(300);
+
+    // Act
+    await cut.Instance.Seek(1);
+    await Task.Delay(100);
+
+    // Assert
+    seekArgs.Should().NotBeNull();
+    seekArgs!.AtStart.Should().BeFalse();
+    seekArgs!.AtEnd.Should().BeTrue();
+  }
+
+  [Fact]
+  public async Task GetProgress_ReturnsCorrectInformation()
+  {
+    // Arrange
+    SetupLongTextStructure(100);
+    var cut = Render<Typewriter>(parameters =>
+      parameters
+        .Add(p => p.Autostart, false)
+        .Add(p => p.ChildContent, builder => builder.AddMarkupContent(0, "<p>Test content</p>"))
+    );
+
+    await Task.Delay(300);
+    await cut.Instance.Seek(0.5);
+
+    // Act
+    var progress = cut.Instance.GetProgress();
+
+    // Assert
+    progress.Should().NotBeNull();
+    progress.Total.Should().Be(100);
+    progress.Percent.Should().BeApproximately(50, 10); // Allow tolerance
+    progress.Position.Should().BeApproximately(0.5, 0.1);
+  }
+
+  [Fact]
+  public async Task Seek_WhileRunning_PausesAnimation()
+  {
+    // Arrange
+    SetupLongTextStructure(120);
+    var cut = Render<Typewriter>(parameters =>
+      parameters
+        .Add(p => p.Autostart, false)
+        .Add(p => p.MinDuration, 5000)
+        .Add(p => p.ChildContent, builder => builder.AddMarkupContent(0, "<p>Test content</p>"))
+    );
+
+    await Task.Delay(300);
+    await cut.Instance.Start();
+    await Task.Delay(200); // Let it animate
+
+    // Act
+    await cut.Instance.Seek(0.5);
+
+    // Assert
+    cut.Instance.IsRunning.Should().BeTrue();
+    cut.Instance.IsPaused.Should().BeTrue();
+  }
+
+  [Fact]
+  public async Task Seek_PreservesRunningState()
+  {
+    // Arrange
+    SetupLongTextStructure(100);
+    TypewriterSeekEventArgs? seekArgs = null;
+    var cut = Render<Typewriter>(parameters =>
+      parameters
+        .Add(p => p.Autostart, false)
+        .Add(p => p.MinDuration, 5000)
+        .Add(p => p.ChildContent, builder => builder.AddMarkupContent(0, "<p>Test content</p>"))
+        .Add(
+          p => p.OnSeek,
+          EventCallback.Factory.Create<TypewriterSeekEventArgs>(this, args => seekArgs = args)
+        )
+    );
+
+    await Task.Delay(300);
+    await cut.Instance.Start();
+    await Task.Delay(200); // Let it animate
+
+    // Act
+    await cut.Instance.Seek(0.25);
+
+    // Assert
+    seekArgs.Should().NotBeNull();
+    seekArgs!.WasRunning.Should().BeTrue();
+    seekArgs.CanResume.Should().BeTrue();
+  }
 }

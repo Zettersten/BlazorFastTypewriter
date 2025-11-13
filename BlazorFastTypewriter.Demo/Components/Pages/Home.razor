@@ -286,6 +286,114 @@
 </section>
 
 <section class="demo-section">
+    <h2>Seek & Scrubbing</h2>
+    <p>Jump to any position in the animation with seek functionality, perfect for progress bar scrubbing and interactive controls.</p>
+    
+    <div class="demo-container">
+        <div class="seek-controls">
+            <div class="seek-bar-container">
+                <label>
+                    Seek Position: <strong>@(_seekPercent.ToString("F1"))%</strong>
+                    <input type="range" 
+                           class="seek-bar" 
+                           min="0" 
+                           max="100" 
+                           step="1" 
+                           value="@_seekPercent" 
+                           @oninput="HandleSeekInput"
+                           @onchange="HandleSeekChange" />
+                </label>
+            </div>
+            
+            <div class="seek-buttons">
+                <button @onclick="() => SeekToPosition(0)">0%</button>
+                <button @onclick="() => SeekToPosition(0.25)">25%</button>
+                <button @onclick="() => SeekToPosition(0.5)">50%</button>
+                <button @onclick="() => SeekToPosition(0.75)">75%</button>
+                <button @onclick="() => SeekToPosition(1)">100%</button>
+            </div>
+            
+            <div class="seek-info">
+                @_seekInfo
+            </div>
+        </div>
+        
+        <div class="demo-preview">
+            <Typewriter @ref="_seekTypewriter"
+                        Autostart="false"
+                        Speed="60"
+                        OnSeek="HandleSeek"
+                        OnProgress="HandleSeekProgress"
+                        OnComplete="HandleSeekComplete">
+                <div>
+                    <h3>Seek Demo</h3>
+                    <p>Use the slider above or buttons to jump to any position in this text. The seek functionality allows you to navigate through the animation precisely.</p>
+                    <p>This is perfect for:</p>
+                    <ul>
+                        <li><strong>Progress bar scrubbing</strong> - drag to any position</li>
+                        <li><strong>Quick navigation</strong> - jump to specific points</li>
+                        <li><strong>State restoration</strong> - resume from saved position</li>
+                        <li><strong>Interactive tutorials</strong> - let users control pacing</li>
+                    </ul>
+                </div>
+            </Typewriter>
+        </div>
+        
+        <div class="demo-controls">
+            <button @onclick="StartSeek" disabled="@(_seekRunning && !_seekPaused)">Start</button>
+            <button @onclick="PauseSeek" disabled="@(!_seekRunning || _seekPaused)">Pause</button>
+            <button @onclick="ResumeSeek" disabled="@(!_seekPaused)">Resume</button>
+            <button @onclick="ResetSeek">Reset</button>
+        </div>
+    </div>
+    
+    <CodeSample>
+        <pre><code>&lt;Typewriter @@ref="_typewriter"
+            OnSeek="HandleSeek"
+            OnProgress="HandleProgress"&gt;
+    &lt;p&gt;Content...&lt;/p&gt;
+&lt;/Typewriter&gt;
+
+&lt;input type="range" 
+       min="0" max="100" 
+       value="@@_position" 
+       @@oninput="HandleSeekInput" /&gt;
+
+&lt;button @@onclick="() =&gt; SeekTo(0.5)"&gt;Jump to 50%&lt;/button&gt;
+
+@@code {
+    private Typewriter? _typewriter;
+    private double _position = 0;
+    
+    private async Task HandleSeekInput(ChangeEventArgs e)
+    {
+        if (double.TryParse(e.Value?.ToString(), out var value))
+        {
+            _position = value;
+            await _typewriter?.SeekToPercent(value);
+        }
+    }
+    
+    private async Task SeekTo(double position)
+    {
+        await _typewriter?.Seek(position);
+    }
+    
+    private void HandleSeek(TypewriterSeekEventArgs args)
+    {
+        _position = args.Position * 100;
+        Console.WriteLine($"Seeked to {args.Percent:F1}%");
+    }
+    
+    private void HandleProgress(TypewriterProgressEventArgs args)
+    {
+        _position = args.Percent;
+    }
+}</code></pre>
+    </CodeSample>
+</section>
+
+<section class="demo-section">
     <h2>RTL (Right-to-Left) Support</h2>
     <p>Full support for bidirectional text including Arabic, Hebrew, and other RTL languages.</p>
     
