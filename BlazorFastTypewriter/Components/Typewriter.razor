@@ -8,7 +8,7 @@
      aria-atomic="false"
      aria-busy="@(_isRunning ? "true" : "false")"
      aria-label="@AriaLabel"
-     style="direction: @Dir">
+     style="direction: @Dir; @GetVisibilityStyle()">
     @if (CurrentContent is not null)
     {
         @CurrentContent

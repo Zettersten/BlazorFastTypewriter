@@ -45,17 +45,19 @@ public partial class Typewriter
     {
       try
       {
-        // Explicitly render the original content so we can extract it
-        // This ensures new content from SetText() is properly rendered before extraction
+        // CRITICAL: Render the original content BEFORE building operations
+        // This ensures new content from SetText() is in the DOM before extraction
         CurrentContent = _originalContent;
         await InvokeAsync(StateHasChanged).ConfigureAwait(false);
-        await Task.Delay(100).ConfigureAwait(false); // Allow DOM to update and render
+        
+        // Longer delay to ensure Blazor has fully rendered the new content
+        await Task.Delay(150).ConfigureAwait(false);
 
         var structure = await _jsModule
           .InvokeAsync<DomStructure>("extractStructure", [_containerId])
           .ConfigureAwait(false);
 
-        _operations = DomParsingService.ParseDomStructure(structure);
+        _operations = _domParser.ParseDomStructure(structure);
         _totalChars = _operations.Count(static op => op.Type == OperationType.Char);
       }
       catch (Exception)

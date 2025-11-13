@@ -147,6 +147,18 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
   /// </summary>
   private bool ShouldShowChildContent() => !Autostart || _isInitialized;
 
+  /// <summary>
+  /// Gets visibility style to hide content flash before animation.
+  /// </summary>
+  private string GetVisibilityStyle()
+  {
+    // Hide content if we're preparing to start or if animation hasn't begun
+    if (_isRunning && CurrentContent is null)
+      return "visibility: hidden;";
+    
+    return string.Empty;
+  }
+
   protected override void OnInitialized()
   {
     _originalContent = ChildContent;
