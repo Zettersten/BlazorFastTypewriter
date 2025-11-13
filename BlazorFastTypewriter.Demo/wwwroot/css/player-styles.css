@@ -8,6 +8,7 @@
 .player-container .demo-box {
     position: relative;
     min-height: 200px;
+    padding-top: 120px; /* Space for controls */
     border-radius: 0.75rem;
     overflow: hidden;
 }
