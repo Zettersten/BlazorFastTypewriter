@@ -2,20 +2,14 @@ namespace BlazorFastTypewriter.Demo.Components.Pages;
 
 public partial class Home
 {
-  // Hero
   private Typewriter? _heroTypewriter;
-
-  // Basic
   private Typewriter? _basicTypewriter;
-
   private bool _basicRunning;
   private bool _basicPaused;
   private TypewriterProgressInfo? _basicProgress;
 
-  // Hero handlers
   private void HandleHeroComplete()
   {
-    // Auto-restart hero after delay
     _ = Task.Run(async () =>
     {
       await Task.Delay(3000);
@@ -27,7 +21,6 @@ public partial class Home
     });
   }
 
-  // Basic handlers
   private void HandleBasicComplete()
   {
     _basicRunning = false;

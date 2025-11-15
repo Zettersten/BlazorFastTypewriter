@@ -4,36 +4,26 @@ namespace BlazorFastTypewriter.Demo.Components.Pages;
 
 public partial class Basics
 {
-  // Basic
   private Typewriter? _basicTypewriter;
-
   private bool _basicRunning;
   private bool _basicPaused;
   private TypewriterProgressInfo? _basicProgress;
 
-  // Speed
   private Typewriter? _speedTypewriter;
-
   private bool _speedRunning;
   private bool _speedPaused;
   private int _speed = 100;
   private TypewriterProgressInfo? _speedProgress;
 
-  // HTML
   private Typewriter? _htmlTypewriter;
-
   private bool _htmlRunning;
   private bool _htmlPaused;
   private TypewriterProgressInfo? _htmlProgress;
 
-  // RTL
   private Typewriter? _rtlTypewriter;
-
   private bool _rtlRunning;
   private bool _rtlPaused;
   private TypewriterProgressInfo? _rtlProgress;
-
-  // Basic handlers
   private void HandleBasicComplete()
   {
     _basicRunning = false;
@@ -81,7 +71,6 @@ public partial class Basics
     }
   }
 
-  // Speed handlers
   private void HandleSpeedChange(ChangeEventArgs e)
   {
     if (int.TryParse(e.Value?.ToString(), out var newSpeed))
@@ -137,7 +126,6 @@ public partial class Basics
     }
   }
 
-  // HTML handlers
   private void HandleHtmlComplete()
   {
     _htmlRunning = false;
@@ -185,7 +173,6 @@ public partial class Basics
     }
   }
 
-  // RTL handlers
   private void HandleRtlComplete()
   {
     _rtlRunning = false;
@@ -233,7 +220,6 @@ public partial class Basics
     }
   }
 
-  // Progress handlers
   private void HandleBasicProgress(TypewriterProgressEventArgs args)
   {
     _basicProgress = new TypewriterProgressInfo(
