@@ -20,16 +20,6 @@
     <ProjectReference Include="..\BlazorFastTypewriter\BlazorFastTypewriter.csproj" />
   </ItemGroup>
 
-  <!-- Explicitly ensure 404.html and .nojekyll are included in publish output -->
-  <ItemGroup>
-    <Content Include="wwwroot\404.html">
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-    </Content>
-    <Content Include="wwwroot\.nojekyll">
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-    </Content>
-  </ItemGroup>
-
   <!-- Replace BASE_HREF token in index.html and 404.html during build -->
   <Target Name="ReplaceBaseHref" AfterTargets="Publish">
     <PropertyGroup>
