@@ -20,15 +20,21 @@
     <ProjectReference Include="..\BlazorFastTypewriter\BlazorFastTypewriter.csproj" />
   </ItemGroup>
 
-  <!-- Replace BASE_HREF token in index.html during build -->
+  <!-- Replace BASE_HREF token in index.html and 404.html during build -->
   <Target Name="ReplaceBaseHref" AfterTargets="Publish">
     <PropertyGroup>
       <IndexHtmlPath>$([System.IO.Path]::Combine('$(PublishDir)', 'wwwroot', 'index.html'))</IndexHtmlPath>
+      <NotFoundHtmlPath>$([System.IO.Path]::Combine('$(PublishDir)', 'wwwroot', '404.html'))</NotFoundHtmlPath>
     </PropertyGroup>
     <!-- Only replace if file exists and BaseHref is different from default -->
     <ReplaceFileText Condition="Exists('$(IndexHtmlPath)') And '$(BaseHref)' != '/'"
                      InputFilename="$(IndexHtmlPath)" 
                      OutputFilename="$(IndexHtmlPath)" 
+                     MatchExpression="&lt;base href=&quot;/&quot; /&gt;" 
+                     ReplacementText="&lt;base href=&quot;$(BaseHref)&quot; /&gt;" />
+    <ReplaceFileText Condition="Exists('$(NotFoundHtmlPath)') And '$(BaseHref)' != '/'"
+                     InputFilename="$(NotFoundHtmlPath)" 
+                     OutputFilename="$(NotFoundHtmlPath)" 
                      MatchExpression="&lt;base href=&quot;/&quot; /&gt;" 
                      ReplacementText="&lt;base href=&quot;$(BaseHref)&quot; /&gt;" />
   </Target>
