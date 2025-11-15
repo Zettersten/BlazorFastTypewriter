@@ -23,9 +23,14 @@
   <!-- Replace BASE_HREF token in index.html during build -->
   <Target Name="ReplaceBaseHref" AfterTargets="Publish">
     <PropertyGroup>
-      <IndexHtmlPath>$(PublishDir)wwwroot\index.html</IndexHtmlPath>
+      <IndexHtmlPath>$([System.IO.Path]::Combine('$(PublishDir)', 'wwwroot', 'index.html'))</IndexHtmlPath>
     </PropertyGroup>
-    <ReplaceFileText InputFilename="$(IndexHtmlPath)" OutputFilename="$(IndexHtmlPath)" MatchExpression="&lt;base href=&quot;/&quot; /&gt;" ReplacementText="&lt;base href=&quot;$(BaseHref)&quot; /&gt;" />
+    <!-- Only replace if file exists and BaseHref is different from default -->
+    <ReplaceFileText Condition="Exists('$(IndexHtmlPath)') And '$(BaseHref)' != '/'"
+                     InputFilename="$(IndexHtmlPath)" 
+                     OutputFilename="$(IndexHtmlPath)" 
+                     MatchExpression="&lt;base href=&quot;/&quot; /&gt;" 
+                     ReplacementText="&lt;base href=&quot;$(BaseHref)&quot; /&gt;" />
   </Target>
 
   <!-- Ensure JavaScript files from referenced component library are copied during publish -->
@@ -33,8 +38,8 @@
   <!-- This target runs after publish to ensure JS files are in the output -->
   <Target Name="CopyComponentLibraryJavaScript" AfterTargets="Publish">
     <PropertyGroup>
-      <PublishWwwRootPath>$(PublishDir)wwwroot</PublishWwwRootPath>
-      <JsDestinationPath>$(PublishWwwRootPath)\_content\BlazorFastTypewriter\Components</JsDestinationPath>
+      <PublishWwwRootPath>$([System.IO.Path]::Combine('$(PublishDir)', 'wwwroot'))</PublishWwwRootPath>
+      <JsDestinationPath>$([System.IO.Path]::Combine('$(PublishWwwRootPath)', '_content', 'BlazorFastTypewriter', 'Components'))</JsDestinationPath>
     </PropertyGroup>
     <ItemGroup>
       <JsFileToCopy Include="..\BlazorFastTypewriter\Components\Typewriter.razor.js" />
