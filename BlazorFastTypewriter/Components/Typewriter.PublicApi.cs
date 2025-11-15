@@ -49,9 +49,25 @@ public partial class Typewriter
         // CRITICAL: Set extraction flag and render content in hidden extraction container
         _isExtracting = true;
         await InvokeAsync(StateHasChanged).ConfigureAwait(false);
+        
+        // Small delay to ensure Blazor has started rendering the extraction container
+        // This is necessary because StateHasChanged is async but doesn't wait for render completion
+        await Task.Delay(50).ConfigureAwait(false);
 
-        // Wait for Blazor to fully render the content in the extraction container
-        await Task.Delay(250).ConfigureAwait(false);
+        // Wait for the extraction container to be available in the DOM with content
+        // This is more reliable than a fixed delay, especially in production environments
+        var elementReady = await _jsModule
+          .InvokeAsync<bool>("waitForElement", [$"{_containerId}-extract", 2000])
+          .ConfigureAwait(false);
+
+        if (!elementReady)
+        {
+          // Element not found after waiting - fallback to showing content immediately
+          _operations = [];
+          _totalChars = 0;
+          _isExtracting = false;
+          throw new InvalidOperationException("Extraction container not found in DOM");
+        }
 
         // Extract from the hidden extraction container
         var structure = await _jsModule
@@ -64,26 +80,40 @@ public partial class Typewriter
         // Clear extraction flag
         _isExtracting = false;
         await InvokeAsync(StateHasChanged).ConfigureAwait(false);
+
+        // If operations are empty after parsing, this indicates extraction failed
+        if (_operations.Length == 0 || _totalChars == 0)
+        {
+          #if DEBUG
+          Console.Error.WriteLine($"Typewriter: DOM extraction returned empty structure. Container ID: {_containerId}-extract");
+          #endif
+          throw new InvalidOperationException("DOM extraction returned empty structure");
+        }
       }
       catch (Exception)
       {
+        // Log the error for debugging
+        #if DEBUG
+        Console.Error.WriteLine($"Typewriter: DOM extraction failed");
+        #endif
+        
         // Fallback: Create simple text-based operations without DOM parsing
         _operations = [];
         _totalChars = 0;
         _isExtracting = false;
-      }
-
-      // If operations are still empty after parsing, skip animation and just show content
-      if (_operations.Length == 0)
-      {
-        // No valid operations - just show the content immediately
-        _isRunning = true;
-        await OnStart.InvokeAsync().ConfigureAwait(false);
-        _isRunning = false;
-        CurrentContent = _originalContent;
-        await InvokeAsync(StateHasChanged).ConfigureAwait(false);
-        await OnComplete.InvokeAsync().ConfigureAwait(false);
-        return;
+        
+        // If operations are still empty after parsing, skip animation and just show content
+        if (_operations.Length == 0)
+        {
+          // No valid operations - just show the content immediately
+          _isRunning = true;
+          await OnStart.InvokeAsync().ConfigureAwait(false);
+          _isRunning = false;
+          CurrentContent = _originalContent;
+          await InvokeAsync(StateHasChanged).ConfigureAwait(false);
+          await OnComplete.InvokeAsync().ConfigureAwait(false);
+          return;
+        }
       }
     }
     else

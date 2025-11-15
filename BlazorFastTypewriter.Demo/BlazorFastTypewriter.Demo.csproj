@@ -26,6 +26,16 @@
     <ReplaceFileText InputFilename="$(IndexHtmlPath)" OutputFilename="$(IndexHtmlPath)" MatchExpression="&lt;base href=&quot;/&quot; /&gt;" ReplacementText="&lt;base href=&quot;$(BaseHref)&quot; /&gt;" />
   </Target>
 
+  <!-- Ensure JavaScript files from referenced component library are copied during publish -->
+  <Target Name="CopyComponentLibraryJavaScript" AfterTargets="Publish">
+    <ItemGroup>
+      <JsFileToCopy Include="..\BlazorFastTypewriter\Components\Typewriter.razor.js" />
+    </ItemGroup>
+    <Copy SourceFiles="@(JsFileToCopy)" 
+          DestinationFolder="$(PublishDir)wwwroot\_content\BlazorFastTypewriter\Components\" 
+          SkipUnchangedFiles="true" />
+  </Target>
+
   <!-- Task to replace text in files -->
   <UsingTask TaskName="ReplaceFileText" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
     <ParameterGroup>

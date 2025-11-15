@@ -69,7 +69,11 @@
   </ItemGroup>
   
   <ItemGroup>
-    <Content Include="Components\Typewriter.razor.js" />
+    <!-- Include JavaScript file - Blazor automatically handles copying to _content folder -->
+    <Content Include="Components\Typewriter.razor.js">
+      <Pack>true</Pack>
+      <PackagePath>contentFiles\any\any\_content\BlazorFastTypewriter\Components\</PackagePath>
+    </Content>
   </ItemGroup>
   
   <ItemGroup>

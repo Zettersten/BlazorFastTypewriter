@@ -199,10 +199,13 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
     if (!firstRender)
       return;
 
+    string? modulePath = null;
     try
     {
       // Construct the module path relative to the base URI to support GitHub Pages subdirectory deployment
-      var modulePath = $"{Navigation.BaseUri}_content/BlazorFastTypewriter/Components/Typewriter.razor.js";
+      // Ensure proper path construction by trimming trailing slash and adding it back
+      var baseUri = Navigation.BaseUri.TrimEnd('/');
+      modulePath = $"{baseUri}/_content/BlazorFastTypewriter/Components/Typewriter.razor.js";
       _jsModule = await JSRuntime
         .InvokeAsync<IJSObjectReference>(
           "import",
@@ -228,7 +231,13 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
     }
     catch (Exception)
     {
-      // JavaScript not available (SSR scenario) or JS interop failed, show content immediately
+      // JavaScript not available (SSR scenario) or JS interop failed
+      // Log error for debugging (only in development)
+      #if DEBUG
+      Console.Error.WriteLine($"Typewriter: Failed to load JavaScript module. Path attempted: {modulePath ?? "unknown"}");
+      #endif
+      
+      // Show content immediately if not autostart, otherwise let animation handle it
       _isInitialized = true;
       if (ChildContent is not null && !Autostart)
       {

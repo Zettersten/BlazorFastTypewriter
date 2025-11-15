@@ -23,9 +23,22 @@ public partial class Typewriter
       // Set extraction flag to render content in hidden extraction container
       _isExtracting = true;
       await InvokeAsync(StateHasChanged).ConfigureAwait(false);
+      
+      // Small delay to ensure Blazor has started rendering the extraction container
+      await Task.Delay(50).ConfigureAwait(false);
 
-      // Wait for Blazor to render the content in the extraction container
-      await Task.Delay(250).ConfigureAwait(false);
+      // Wait for the extraction container to be available in the DOM with content
+      var elementReady = await _jsModule
+        .InvokeAsync<bool>("waitForElement", [$"{_containerId}-extract", 2000])
+        .ConfigureAwait(false);
+
+      if (!elementReady)
+      {
+        _operations = [];
+        _totalChars = 0;
+        _isExtracting = false;
+        return;
+      }
 
       var structure = await _jsModule
         .InvokeAsync<DomStructure>("extractStructure", [$"{_containerId}-extract"])

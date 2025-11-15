@@ -18,6 +18,36 @@ export function checkReducedMotion() {
 }
 
 /**
+ * Waits for an element to be available in the DOM.
+ * @param {string} containerId - The data attribute ID to find the container element.
+ * @param {number} timeoutMs - Maximum time to wait in milliseconds (default: 2000).
+ * @returns {Promise<boolean>} True if element is found and has content, false if timeout.
+ */
+export async function waitForElement(containerId, timeoutMs = 2000) {
+  // SSR compatibility check
+  if (typeof document === 'undefined') {
+    return false;
+  }
+
+  const startTime = Date.now();
+  const selector = `[data-typewriter-id="${containerId}"]`;
+
+  while (Date.now() - startTime < timeoutMs) {
+    const element = document.querySelector(selector);
+    if (element && element instanceof HTMLElement) {
+      // Also check if element has content (child nodes)
+      if (element.childNodes.length > 0) {
+        return true;
+      }
+    }
+    // Wait a bit before checking again
+    await new Promise(resolve => setTimeout(resolve, 50));
+  }
+
+  return false;
+}
+
+/**
  * Extracts the DOM structure from an element, flattening it into a tree structure.
  * @param {string} containerId - The data attribute ID to find the container element.
  * @returns {Object} The extracted DOM structure.
