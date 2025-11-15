@@ -314,7 +314,7 @@ public partial class Typewriter
           {
             _isRunning = false;
           }
-          await InvokeAsync(() =>
+            await InvokeAsync(() =>
             {
               CurrentContent = _originalContent;
               StateHasChanged();
@@ -323,7 +323,7 @@ public partial class Typewriter
           await OnComplete.InvokeAsync().ConfigureAwait(false);
         }
       },
-      ct
+      resumeCt
     );
   }
 
