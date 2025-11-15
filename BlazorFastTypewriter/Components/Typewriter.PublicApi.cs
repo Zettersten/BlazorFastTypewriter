@@ -50,14 +50,14 @@ public partial class Typewriter
         _isExtracting = true;
         await InvokeAsync(StateHasChanged).ConfigureAwait(false);
         
-        // Small delay to ensure Blazor has started rendering the extraction container
-        // This is necessary because StateHasChanged is async but doesn't wait for render completion
-        await Task.Delay(50).ConfigureAwait(false);
+        // Longer delay to ensure Blazor has fully rendered the extraction container
+        // Release builds may need more time due to AOT optimizations
+        await Task.Delay(150).ConfigureAwait(false);
 
         // Wait for the extraction container to be available in the DOM with content
         // This is more reliable than a fixed delay, especially in production environments
         var elementReady = await _jsModule
-          .InvokeAsync<bool>("waitForElement", [$"{_containerId}-extract", 2000])
+          .InvokeAsync<bool>("waitForElement", [$"{_containerId}-extract", 3000])
           .ConfigureAwait(false);
 
         if (!elementReady)
@@ -69,13 +69,33 @@ public partial class Typewriter
           throw new InvalidOperationException("Extraction container not found in DOM");
         }
 
-        // Extract from the hidden extraction container
-        var structure = await _jsModule
-          .InvokeAsync<DomStructure>("extractStructure", [$"{_containerId}-extract"])
-          .ConfigureAwait(false);
+        // Additional delay after element is found to ensure DOM is fully stable
+        // This is critical in Release builds where rendering timing may differ
+        await Task.Delay(100).ConfigureAwait(false);
 
-        _operations = DomParsingService.ParseDomStructure(structure);
-        _totalChars = _operations.Count(static op => op.Type == OperationType.Char);
+        // Extract from the hidden extraction container with retry logic
+        // Release builds may need multiple attempts due to DOM rendering timing
+        DomStructure? structure = null;
+        const int maxRetries = 3;
+        for (var attempt = 0; attempt < maxRetries; attempt++)
+        {
+          structure = await _jsModule
+            .InvokeAsync<DomStructure>("extractStructure", [$"{_containerId}-extract"])
+            .ConfigureAwait(false);
+
+          _operations = DomParsingService.ParseDomStructure(structure);
+          _totalChars = _operations.Count(static op => op.Type == OperationType.Char);
+
+          // If we got valid operations, break out of retry loop
+          if (_operations.Length > 0 && _totalChars > 0)
+            break;
+
+          // Wait a bit longer before retrying (exponential backoff)
+          if (attempt < maxRetries - 1)
+          {
+            await Task.Delay(100 * (attempt + 1)).ConfigureAwait(false);
+          }
+        }
 
         // Clear extraction flag
         _isExtracting = false;

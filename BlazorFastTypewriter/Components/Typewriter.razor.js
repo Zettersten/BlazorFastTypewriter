@@ -64,6 +64,18 @@ export function extractStructure(containerId) {
     return { nodes: [] };
   }
 
+  // Validate that element has content before extracting
+  // This is critical in Release builds where timing may differ
+  if (element.childNodes.length === 0) {
+    return { nodes: [] };
+  }
+  
+  // Additional validation: check if element has meaningful text content
+  const textContent = element.textContent?.trim() || '';
+  if (textContent.length === 0) {
+    return { nodes: [] };
+  }
+
   /**
    * Recursively processes a DOM node and converts it to our structure format.
    * Uses modern JS patterns and optimizations.
