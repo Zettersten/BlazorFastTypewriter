@@ -11,6 +11,12 @@ public partial class Typewriter
     if (ChildContent is null)
       return;
 
+    bool shouldResume = false;
+    int resumeGen = 0;
+    CancellationToken resumeCt = default;
+    int resumeTotalChars = 0;
+    int resumeDelay = 0;
+
     lock (_animationLock)
     {
       if (_isRunning && _isPaused)
@@ -20,55 +26,62 @@ public partial class Typewriter
         _cancellationTokenSource?.Cancel();
         _cancellationTokenSource?.Dispose();
         _cancellationTokenSource = new CancellationTokenSource();
-        var gen = _generation;
-        var ct = _cancellationTokenSource.Token;
-        var totalChars = _totalChars;
+        resumeGen = _generation;
+        resumeCt = _cancellationTokenSource.Token;
+        resumeTotalChars = _totalChars;
 
-        var duration = Math.Max(
+        var resumeDuration = Math.Max(
           MinDuration,
-          Math.Min(MaxDuration, (int)Math.Round((totalChars / (double)Speed) * 1000))
+          Math.Min(MaxDuration, (int)Math.Round((resumeTotalChars / (double)Speed) * 1000))
         );
-        var delay = totalChars > 0 ? Math.Max(8, duration / totalChars) : 0;
-
-        _ = Task.Run(
-          async () =>
-          {
-            try
-            {
-              await AnimateAsync(gen, delay, totalChars, ct).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException) { }
-            catch (Exception)
-            {
-              lock (_animationLock)
-              {
-                _isRunning = false;
-              }
-              await InvokeAsync(() =>
-                {
-                  CurrentContent = _originalContent;
-                  StateHasChanged();
-                })
-                .ConfigureAwait(false);
-              await OnComplete.InvokeAsync().ConfigureAwait(false);
-            }
-          },
-          ct
-        );
-
-        await OnResume.InvokeAsync().ConfigureAwait(false);
-        await InvokeAsync(StateHasChanged).ConfigureAwait(false);
+        resumeDelay = resumeTotalChars > 0 ? Math.Max(8, resumeDuration / resumeTotalChars) : 0;
+        shouldResume = true;
+      }
+      else if (_isRunning)
+      {
         return;
       }
+      else
+      {
+        _generation++;
+        _currentIndex = 0;
+        _currentCharCount = 0;
+        _isPaused = false;
+        _originalContent ??= ChildContent;
+      }
+    }
 
-      if (_isRunning)
-        return;
+    if (shouldResume)
+    {
+      _ = Task.Run(
+        async () =>
+        {
+          try
+          {
+            await AnimateAsync(resumeGen, resumeDelay, resumeTotalChars, resumeCt).ConfigureAwait(false);
+          }
+          catch (OperationCanceledException) { }
+          catch (Exception)
+          {
+            lock (_animationLock)
+            {
+              _isRunning = false;
+            }
+            await InvokeAsync(() =>
+              {
+                CurrentContent = _originalContent;
+                StateHasChanged();
+              })
+              .ConfigureAwait(false);
+            await OnComplete.InvokeAsync().ConfigureAwait(false);
+          }
+        },
+        resumeCt
+      );
 
-      _generation++;
-      _currentIndex = 0;
-      _currentCharCount = 0;
-      _isPaused = false;
-      _originalContent ??= ChildContent;
+      await OnResume.InvokeAsync().ConfigureAwait(false);
+      await InvokeAsync(StateHasChanged).ConfigureAwait(false);
+      return;
     }
 
     if (_jsModule is not null && _isInitialized)
@@ -113,17 +126,17 @@ public partial class Typewriter
           }
         }
 
-        int totalChars;
-        ImmutableArray<NodeOperation> operations;
+        ImmutableArray<NodeOperation> extractedOperations;
+        int extractedTotalChars;
         lock (_animationLock)
         {
           _isExtracting = false;
-          operations = _operations;
-          totalChars = _totalChars;
+          extractedOperations = _operations;
+          extractedTotalChars = _totalChars;
         }
         await InvokeAsync(StateHasChanged).ConfigureAwait(false);
 
-        if (operations.Length == 0 || totalChars == 0)
+        if (extractedOperations.Length == 0 || extractedTotalChars == 0)
         {
           #if DEBUG
           Console.Error.WriteLine($"Typewriter: DOM extraction returned empty structure. Container ID: {_containerId}-extract");
@@ -137,25 +150,30 @@ public partial class Typewriter
         Console.Error.WriteLine($"Typewriter: DOM extraction failed");
         #endif
         
+        bool shouldShowContent = false;
         lock (_animationLock)
         {
           _operations = [];
           _totalChars = 0;
           _isExtracting = false;
+          shouldShowContent = _operations.Length == 0;
         }
         
-        lock (_animationLock)
+        if (shouldShowContent)
         {
-          if (_operations.Length == 0)
+          lock (_animationLock)
           {
             _isRunning = true;
-            await OnStart.InvokeAsync().ConfigureAwait(false);
-            _isRunning = false;
-            CurrentContent = _originalContent;
-            await InvokeAsync(StateHasChanged).ConfigureAwait(false);
-            await OnComplete.InvokeAsync().ConfigureAwait(false);
-            return;
           }
+          await OnStart.InvokeAsync().ConfigureAwait(false);
+          lock (_animationLock)
+          {
+            _isRunning = false;
+          }
+          CurrentContent = _originalContent;
+          await InvokeAsync(StateHasChanged).ConfigureAwait(false);
+          await OnComplete.InvokeAsync().ConfigureAwait(false);
+          return;
         }
       }
     }
@@ -252,11 +270,9 @@ public partial class Typewriter
 
   public async Task Resume()
   {
-    if (!_isPaused || !_isRunning)
-      return;
-
-    int gen;
-    CancellationToken ct;
+    int resumeGen;
+    int resumeTotalChars;
+    CancellationToken resumeCt;
 
     lock (_animationLock)
     {
@@ -264,12 +280,13 @@ public partial class Typewriter
         return;
 
       _generation++;
-      gen = _generation;
+      resumeGen = _generation;
+      resumeTotalChars = _totalChars;
 
       _cancellationTokenSource?.Cancel();
       _cancellationTokenSource?.Dispose();
       _cancellationTokenSource = new CancellationTokenSource();
-      ct = _cancellationTokenSource.Token;
+      resumeCt = _cancellationTokenSource.Token;
 
       _isPaused = false;
     }
@@ -277,18 +294,18 @@ public partial class Typewriter
     await OnResume.InvokeAsync().ConfigureAwait(false);
     await InvokeAsync(StateHasChanged).ConfigureAwait(false);
 
-    var duration = Math.Max(
+    var resumeDuration = Math.Max(
       MinDuration,
-      Math.Min(MaxDuration, (int)Math.Round((_totalChars / (double)Speed) * 1000))
+      Math.Min(MaxDuration, (int)Math.Round((resumeTotalChars / (double)Speed) * 1000))
     );
-    var delay = _totalChars > 0 ? Math.Max(8, duration / _totalChars) : 0;
+    var resumeDelay = resumeTotalChars > 0 ? Math.Max(8, resumeDuration / resumeTotalChars) : 0;
 
     _ = Task.Run(
       async () =>
       {
         try
         {
-          await AnimateAsync(gen, delay, _totalChars, ct).ConfigureAwait(false);
+          await AnimateAsync(resumeGen, resumeDelay, resumeTotalChars, resumeCt).ConfigureAwait(false);
         }
         catch (OperationCanceledException) { }
         catch (Exception)
