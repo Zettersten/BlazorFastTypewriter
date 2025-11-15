@@ -38,6 +38,12 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
   private IJSRuntime JSRuntime { get; set; } = null!;
 
   /// <summary>
+  /// Gets or sets the navigation manager for base URI resolution.
+  /// </summary>
+  [Inject]
+  private NavigationManager Navigation { get; set; } = null!;
+
+  /// <summary>
   /// Gets or sets the content to be animated.
   /// </summary>
   [Parameter]
@@ -195,10 +201,12 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
 
     try
     {
+      // Construct the module path relative to the base URI to support GitHub Pages subdirectory deployment
+      var modulePath = $"{Navigation.BaseUri}_content/BlazorFastTypewriter/Components/Typewriter.razor.js";
       _jsModule = await JSRuntime
         .InvokeAsync<IJSObjectReference>(
           "import",
-          "./_content/BlazorFastTypewriter/Components/Typewriter.razor.js"
+          modulePath
         )
         .ConfigureAwait(false);
 
