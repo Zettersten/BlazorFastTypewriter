@@ -38,6 +38,52 @@ jobs:
           --configuration Release \
           -p:BaseHref="/BlazorFastTypewriter/"
 
+    - name: Verify publish output
+      run: |
+        PUBLISH_DIR="BlazorFastTypewriter.Demo/bin/Release/net10.0/publish/wwwroot"
+        echo "Checking publish directory: $PUBLISH_DIR"
+        if [ ! -d "$PUBLISH_DIR" ]; then
+          echo "ERROR: Publish directory not found!"
+          exit 1
+        fi
+        echo ""
+        echo "Checking for index.html:"
+        if [ ! -f "$PUBLISH_DIR/index.html" ]; then
+          echo "ERROR: index.html not found!"
+          exit 1
+        fi
+        echo "✓ index.html found"
+        echo ""
+        echo "Checking for 404.html:"
+        if [ ! -f "$PUBLISH_DIR/404.html" ]; then
+          echo "ERROR: 404.html not found!"
+          exit 1
+        fi
+        echo "✓ 404.html found"
+        echo ""
+        echo "Checking for .nojekyll:"
+        if [ ! -f "$PUBLISH_DIR/.nojekyll" ]; then
+          echo "WARNING: .nojekyll not found (may cause issues with _framework)"
+        else
+          echo "✓ .nojekyll found"
+        fi
+        echo ""
+        echo "Checking for _framework directory:"
+        if [ ! -d "$PUBLISH_DIR/_framework" ]; then
+          echo "ERROR: _framework directory not found!"
+          exit 1
+        fi
+        echo "✓ _framework directory found"
+
+    - name: List artifact contents
+      run: |
+        PUBLISH_DIR="BlazorFastTypewriter.Demo/bin/Release/net10.0/publish/wwwroot"
+        echo "=== Artifact directory structure ==="
+        find "$PUBLISH_DIR" -type f -name "*.html" -o -name "*.js" -o -name "*.css" | head -20
+        echo ""
+        echo "=== Total files in artifact ==="
+        find "$PUBLISH_DIR" -type f | wc -l
+
     - name: Upload artifact
       uses: actions/upload-pages-artifact@v3
       with:
