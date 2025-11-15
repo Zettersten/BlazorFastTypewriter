@@ -5,25 +5,16 @@ using System.Text.RegularExpressions;
 
 namespace BlazorFastTypewriter.Services;
 
-/// <summary>
-/// Service for parsing DOM structures into animation operations.
-/// Optimized for minimal allocations and maximum performance.
-/// </summary>
 internal sealed partial class DomParsingService
 {
-  // Use source-generated regex for optimal performance in .NET 10
   [GeneratedRegex(@"\s+", RegexOptions.Compiled | RegexOptions.CultureInvariant)]
   private static partial Regex WhitespaceRegex();
 
-  /// <summary>
-  /// Parses a DOM structure into an immutable array of operations.
-  /// </summary>
   public static ImmutableArray<NodeOperation> ParseDomStructure(DomStructure structure)
   {
     if (structure.nodes is not { Length: > 0 })
       return [];
 
-    // Estimate capacity: typically 4 operations per node (open tag, chars, close tag, etc.)
     var builder = ImmutableArray.CreateBuilder<NodeOperation>(
       initialCapacity: structure.nodes.Length * 4
     );
@@ -92,7 +83,6 @@ internal sealed partial class DomParsingService
     if (attributes is null or { Count: 0 })
       return selfClosing ? $"<{tagName} />" : $"<{tagName}>";
 
-    // Use ArrayPool for buffer to reduce allocations
     var estimatedLength = tagName.Length + (attributes.Count * 20) + 10;
     var buffer = ArrayPool<char>.Shared.Rent(estimatedLength);
 
@@ -116,7 +106,6 @@ internal sealed partial class DomParsingService
           span[pos++] = '=';
           span[pos++] = '"';
 
-          // HTML encode the value
           var encodedValue = System.Net.WebUtility.HtmlEncode(value);
           encodedValue.AsSpan().CopyTo(span[pos..]);
           pos += encodedValue.Length;
@@ -142,9 +131,6 @@ internal sealed partial class DomParsingService
   }
 }
 
-/// <summary>
-/// Type of operation for animation.
-/// </summary>
 internal enum OperationType : byte
 {
   OpenTag,
@@ -152,24 +138,14 @@ internal enum OperationType : byte
   CloseTag
 }
 
-/// <summary>
-/// Represents a single operation in the animation sequence.
-/// Optimized using readonly record struct for minimal allocations.
-/// </summary>
 internal readonly record struct NodeOperation(
   OperationType Type,
   char Char = default,
   string TagHtml = ""
 );
 
-/// <summary>
-/// Represents a DOM structure from JavaScript interop.
-/// </summary>
 internal sealed record DomStructure(DomNode[]? nodes);
 
-/// <summary>
-/// Represents a single DOM node from JavaScript interop.
-/// </summary>
 internal sealed record DomNode(
   string type,
   string? tagName = null,

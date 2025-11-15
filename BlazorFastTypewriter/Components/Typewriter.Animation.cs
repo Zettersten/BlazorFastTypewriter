@@ -5,14 +5,8 @@ using Microsoft.AspNetCore.Components;
 
 namespace BlazorFastTypewriter;
 
-/// <summary>
-/// Animation logic for the Typewriter component.
-/// </summary>
 public partial class Typewriter
 {
-  /// <summary>
-  /// Rebuilds the operations array from the original content.
-  /// </summary>
   private async Task RebuildFromOriginal()
   {
     if (_originalContent is null || _jsModule is null || !_isInitialized)
@@ -20,21 +14,14 @@ public partial class Typewriter
 
     try
     {
-      // Set extraction flag to render content in hidden extraction container
       _isExtracting = true;
       await InvokeAsync(StateHasChanged).ConfigureAwait(false);
-      
-      // Longer delay to ensure Blazor has fully rendered the extraction container
-      // Release builds may need more time due to AOT optimizations
       await Task.Delay(150).ConfigureAwait(false);
 
-      // Wait for the extraction container to be available in the DOM with content
       var elementReady = await _jsModule
         .InvokeAsync<bool>("waitForElement", [$"{_containerId}-extract", 3000])
         .ConfigureAwait(false);
       
-      // Additional delay after element is found to ensure DOM is fully stable
-      // This is critical in Release builds where rendering timing may differ
       if (elementReady)
       {
         await Task.Delay(100).ConfigureAwait(false);
@@ -69,24 +56,18 @@ public partial class Typewriter
     }
   }
 
-  /// <summary>
-  /// Builds and renders content up to a specific character index (for seeking).
-  /// </summary>
   private async Task BuildDOMToIndex(int targetChar)
   {
-    // Clear and reset
     _currentCharCount = 0;
     _currentIndex = 0;
 
     if (targetChar <= 0)
     {
-      // Set to empty content instead of null to avoid showing ChildContent fallback
       CurrentContent = static builder => { };
       await InvokeAsync(StateHasChanged).ConfigureAwait(false);
       return;
     }
 
-    // Build HTML up to target character - pre-allocate capacity
     var currentHtml = new StringBuilder(capacity: 1024);
     var charCount = 0;
 
@@ -121,7 +102,6 @@ public partial class Typewriter
     BuildComplete:
     _currentCharCount = charCount;
 
-    // Update content
     var html = currentHtml.ToString();
     await InvokeAsync(() =>
       {
@@ -131,9 +111,6 @@ public partial class Typewriter
       .ConfigureAwait(false);
   }
 
-  /// <summary>
-  /// Core animation loop that renders content character by character.
-  /// </summary>
   private async Task AnimateAsync(
     int generation,
     int baseDelay,
@@ -141,10 +118,8 @@ public partial class Typewriter
     CancellationToken cancellationToken
   )
   {
-    // Pre-allocate StringBuilder with estimated capacity
     var currentHtml = new StringBuilder(capacity: 1024);
 
-    // Rebuild existing content up to current index (for resume support)
     for (var i = 0; i < _currentIndex; i++)
     {
       var op = _operations[i];
@@ -170,9 +145,8 @@ public partial class Typewriter
       if (_isPaused)
       {
         _currentIndex = i;
-        // Use a longer delay when paused to reduce CPU usage
         await Task.Delay(100, cancellationToken).ConfigureAwait(false);
-        i--; // Retry same index
+        i--;
         continue;
       }
 
@@ -196,7 +170,6 @@ public partial class Typewriter
 
       _currentIndex = i + 1;
 
-      // Update content via InvokeAsync to ensure thread safety
       var html = currentHtml.ToString();
       await InvokeAsync(() =>
         {
@@ -231,7 +204,6 @@ public partial class Typewriter
     _isRunning = false;
     _currentCharCount = totalChars;
 
-    // Always fire final progress event at 100%
     await OnProgress
       .InvokeAsync(new TypewriterProgressEventArgs(totalChars, totalChars, 100.0))
       .ConfigureAwait(false);
