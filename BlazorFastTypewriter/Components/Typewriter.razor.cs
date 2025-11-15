@@ -229,12 +229,12 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
         await Start().ConfigureAwait(false);
       }
     }
-    catch (Exception ex)
+    catch (Exception)
     {
       // JavaScript not available (SSR scenario) or JS interop failed
       // Log error for debugging (only in development)
       #if DEBUG
-      Console.Error.WriteLine($"Typewriter: Failed to load JavaScript module. Path attempted: {modulePath ?? "unknown"}. Error: {ex.Message}");
+      Console.Error.WriteLine($"Typewriter: Failed to load JavaScript module. Path attempted: {modulePath ?? "unknown"}");
       #endif
       
       // Show content immediately if not autostart, otherwise let animation handle it

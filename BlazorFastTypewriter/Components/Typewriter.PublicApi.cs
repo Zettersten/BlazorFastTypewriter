@@ -90,11 +90,11 @@ public partial class Typewriter
           throw new InvalidOperationException("DOM extraction returned empty structure");
         }
       }
-      catch (Exception ex)
+      catch (Exception)
       {
         // Log the error for debugging
         #if DEBUG
-        Console.Error.WriteLine($"Typewriter: DOM extraction failed. Error: {ex.Message}");
+        Console.Error.WriteLine($"Typewriter: DOM extraction failed");
         #endif
         
         // Fallback: Create simple text-based operations without DOM parsing
