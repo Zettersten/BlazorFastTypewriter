@@ -11,14 +11,56 @@ public partial class Typewriter
     if (ChildContent is null)
       return;
 
-    if (_isRunning && _isPaused)
-    {
-      await Resume().ConfigureAwait(false);
-      return;
-    }
-
     lock (_animationLock)
     {
+      if (_isRunning && _isPaused)
+      {
+        _isPaused = false;
+        _generation++;
+        _cancellationTokenSource?.Cancel();
+        _cancellationTokenSource?.Dispose();
+        _cancellationTokenSource = new CancellationTokenSource();
+        var gen = _generation;
+        var ct = _cancellationTokenSource.Token;
+        var totalChars = _totalChars;
+
+        var duration = Math.Max(
+          MinDuration,
+          Math.Min(MaxDuration, (int)Math.Round((totalChars / (double)Speed) * 1000))
+        );
+        var delay = totalChars > 0 ? Math.Max(8, duration / totalChars) : 0;
+
+        _ = Task.Run(
+          async () =>
+          {
+            try
+            {
+              await AnimateAsync(gen, delay, totalChars, ct).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) { }
+            catch (Exception)
+            {
+              lock (_animationLock)
+              {
+                _isRunning = false;
+              }
+              await InvokeAsync(() =>
+                {
+                  CurrentContent = _originalContent;
+                  StateHasChanged();
+                })
+                .ConfigureAwait(false);
+              await OnComplete.InvokeAsync().ConfigureAwait(false);
+            }
+          },
+          ct
+        );
+
+        await OnResume.InvokeAsync().ConfigureAwait(false);
+        await InvokeAsync(StateHasChanged).ConfigureAwait(false);
+        return;
+      }
+
       if (_isRunning)
         return;
 
@@ -71,10 +113,17 @@ public partial class Typewriter
           }
         }
 
-        _isExtracting = false;
+        int totalChars;
+        ImmutableArray<NodeOperation> operations;
+        lock (_animationLock)
+        {
+          _isExtracting = false;
+          operations = _operations;
+          totalChars = _totalChars;
+        }
         await InvokeAsync(StateHasChanged).ConfigureAwait(false);
 
-        if (_operations.Length == 0 || _totalChars == 0)
+        if (operations.Length == 0 || totalChars == 0)
         {
           #if DEBUG
           Console.Error.WriteLine($"Typewriter: DOM extraction returned empty structure. Container ID: {_containerId}-extract");
@@ -88,19 +137,25 @@ public partial class Typewriter
         Console.Error.WriteLine($"Typewriter: DOM extraction failed");
         #endif
         
-        _operations = [];
-        _totalChars = 0;
-        _isExtracting = false;
-        
-        if (_operations.Length == 0)
+        lock (_animationLock)
         {
-          _isRunning = true;
-          await OnStart.InvokeAsync().ConfigureAwait(false);
-          _isRunning = false;
-          CurrentContent = _originalContent;
-          await InvokeAsync(StateHasChanged).ConfigureAwait(false);
-          await OnComplete.InvokeAsync().ConfigureAwait(false);
-          return;
+          _operations = [];
+          _totalChars = 0;
+          _isExtracting = false;
+        }
+        
+        lock (_animationLock)
+        {
+          if (_operations.Length == 0)
+          {
+            _isRunning = true;
+            await OnStart.InvokeAsync().ConfigureAwait(false);
+            _isRunning = false;
+            CurrentContent = _originalContent;
+            await InvokeAsync(StateHasChanged).ConfigureAwait(false);
+            await OnComplete.InvokeAsync().ConfigureAwait(false);
+            return;
+          }
         }
       }
     }
@@ -114,21 +169,34 @@ public partial class Typewriter
 
     if (_prefersReducedMotion)
     {
-      _isRunning = true;
+      lock (_animationLock)
+      {
+        _isRunning = true;
+      }
       await OnStart.InvokeAsync().ConfigureAwait(false);
-      _isRunning = false;
+      lock (_animationLock)
+      {
+        _isRunning = false;
+      }
       CurrentContent = _originalContent;
       await InvokeAsync(StateHasChanged).ConfigureAwait(false);
       await OnComplete.InvokeAsync().ConfigureAwait(false);
       return;
     }
 
-    var gen = _generation;
-    _isRunning = true;
-    _cancellationTokenSource?.Cancel();
-    _cancellationTokenSource?.Dispose();
-    _cancellationTokenSource = new CancellationTokenSource();
-    var ct = _cancellationTokenSource.Token;
+    int gen;
+    int totalChars;
+    CancellationToken ct;
+    lock (_animationLock)
+    {
+      gen = _generation;
+      _isRunning = true;
+      totalChars = _totalChars;
+      _cancellationTokenSource?.Cancel();
+      _cancellationTokenSource?.Dispose();
+      _cancellationTokenSource = new CancellationTokenSource();
+      ct = _cancellationTokenSource.Token;
+    }
 
     await OnStart.InvokeAsync().ConfigureAwait(false);
 
@@ -137,9 +205,9 @@ public partial class Typewriter
 
     var duration = Math.Max(
       MinDuration,
-      Math.Min(MaxDuration, (int)Math.Round((_totalChars / (double)Speed) * 1000))
+      Math.Min(MaxDuration, (int)Math.Round((totalChars / (double)Speed) * 1000))
     );
-    var delay = _totalChars > 0 ? Math.Max(8, duration / _totalChars) : 0;
+    var delay = totalChars > 0 ? Math.Max(8, duration / totalChars) : 0;
 
     _ = Task.Run(
       async () =>
@@ -151,7 +219,10 @@ public partial class Typewriter
         catch (OperationCanceledException) { }
         catch (Exception)
         {
-          _isRunning = false;
+          lock (_animationLock)
+          {
+            _isRunning = false;
+          }
           await InvokeAsync(() =>
             {
               CurrentContent = _originalContent;
@@ -167,12 +238,9 @@ public partial class Typewriter
 
   public async Task Pause()
   {
-    if (!_isRunning || _isPaused)
-      return;
-
     lock (_animationLock)
     {
-      if (_isPaused)
+      if (!_isRunning || _isPaused)
         return;
 
       _isPaused = true;
@@ -225,7 +293,10 @@ public partial class Typewriter
         catch (OperationCanceledException) { }
         catch (Exception)
         {
-          _isRunning = false;
+          lock (_animationLock)
+          {
+            _isRunning = false;
+          }
           await InvokeAsync(() =>
             {
               CurrentContent = _originalContent;
@@ -241,35 +312,40 @@ public partial class Typewriter
 
   public async Task Complete()
   {
-    if (!_isRunning)
-      return;
+    lock (_animationLock)
+    {
+      if (!_isRunning)
+        return;
 
-    _generation++;
-    _isRunning = false;
-    _isPaused = false;
-    _currentIndex = 0;
-    _currentCharCount = _totalChars;
+      _generation++;
+      _isRunning = false;
+      _isPaused = false;
+      _currentIndex = 0;
+      _currentCharCount = _totalChars;
+      _cancellationTokenSource?.Cancel();
+    }
 
     CurrentContent = _originalContent;
-    _cancellationTokenSource?.Cancel();
-
     await InvokeAsync(StateHasChanged).ConfigureAwait(false);
     await OnComplete.InvokeAsync().ConfigureAwait(false);
   }
 
   public async Task Reset()
   {
-    _generation++;
-    _isRunning = false;
-    _isPaused = false;
-    _isExtracting = false;
-    _currentIndex = 0;
-    _currentCharCount = 0;
-    _totalChars = 0;
-    _operations = [];
-    CurrentContent = null;
-    _cancellationTokenSource?.Cancel();
+    lock (_animationLock)
+    {
+      _generation++;
+      _isRunning = false;
+      _isPaused = false;
+      _isExtracting = false;
+      _currentIndex = 0;
+      _currentCharCount = 0;
+      _totalChars = 0;
+      _operations = [];
+      _cancellationTokenSource?.Cancel();
+    }
 
+    CurrentContent = null;
     await InvokeAsync(StateHasChanged).ConfigureAwait(false);
     await OnProgress.InvokeAsync(new TypewriterProgressEventArgs(0, 0, 0)).ConfigureAwait(false);
     await OnReset.InvokeAsync().ConfigureAwait(false);
@@ -294,48 +370,72 @@ public partial class Typewriter
     if (_originalContent is null)
       return;
 
-    if (_operations.Length == 0)
+    bool wasRunning;
+    int totalChars;
+    ImmutableArray<NodeOperation> operations;
+
+    lock (_animationLock)
+    {
+      wasRunning = _isRunning && !_isPaused;
+      totalChars = _totalChars;
+      operations = _operations;
+    }
+
+    if (operations.Length == 0)
     {
       await RebuildFromOriginal().ConfigureAwait(false);
+      lock (_animationLock)
+      {
+        totalChars = _totalChars;
+        operations = _operations;
+      }
     }
 
     var normalizedPosition = Math.Clamp(position, 0, 1);
-    var wasRunning = _isRunning && !_isPaused;
+    var targetChar = (int)(normalizedPosition * totalChars);
 
-    _generation++;
-    _cancellationTokenSource?.Cancel();
-    _cancellationTokenSource?.Dispose();
-    _cancellationTokenSource = new CancellationTokenSource();
-
-    if (wasRunning)
+    lock (_animationLock)
     {
-      _isPaused = true;
-    }
-    else if (!_isRunning)
-    {
-      _isRunning = true;
-      _isPaused = true;
+      _generation++;
+      _cancellationTokenSource?.Cancel();
+      _cancellationTokenSource?.Dispose();
+      _cancellationTokenSource = new CancellationTokenSource();
+
+      if (wasRunning)
+      {
+        _isPaused = true;
+      }
+      else if (!_isRunning)
+      {
+        _isRunning = true;
+        _isPaused = true;
+      }
     }
 
-    var targetChar = (int)(normalizedPosition * _totalChars);
     await BuildDOMToIndex(targetChar).ConfigureAwait(false);
 
     var atStart = normalizedPosition == 0;
     var atEnd = normalizedPosition >= 1.0;
 
-    if (atStart || atEnd)
+    int currentCharCount;
+    lock (_animationLock)
     {
-      _isRunning = false;
-      _isPaused = false;
+      if (atStart || atEnd)
+      {
+        _isRunning = false;
+        _isPaused = false;
+      }
+      currentCharCount = _currentCharCount;
+      totalChars = _totalChars;
     }
 
     await OnSeek
       .InvokeAsync(
         new TypewriterSeekEventArgs(
           Position: normalizedPosition,
-          TargetChar: _currentCharCount,
-          TotalChars: _totalChars,
-          Percent: _totalChars > 0 ? (_currentCharCount / (double)_totalChars) * 100 : 0,
+          TargetChar: currentCharCount,
+          TotalChars: totalChars,
+          Percent: totalChars > 0 ? (currentCharCount / (double)totalChars) * 100 : 0,
           WasRunning: wasRunning,
           CanResume: !atStart && !atEnd,
           AtStart: atStart,
@@ -347,9 +447,9 @@ public partial class Typewriter
     await OnProgress
       .InvokeAsync(
         new TypewriterProgressEventArgs(
-          _currentCharCount,
-          _totalChars,
-          _totalChars > 0 ? (_currentCharCount / (double)_totalChars) * 100 : 0
+          currentCharCount,
+          totalChars,
+          totalChars > 0 ? (currentCharCount / (double)totalChars) * 100 : 0
         )
       )
       .ConfigureAwait(false);
@@ -362,14 +462,26 @@ public partial class Typewriter
 
   public Task SeekToPercent(double percent) => Seek(percent / 100);
 
-  public Task SeekToChar(int charIndex) =>
-    _totalChars == 0 ? Task.CompletedTask : Seek(charIndex / (double)_totalChars);
+  public Task SeekToChar(int charIndex)
+  {
+    int totalChars;
+    lock (_animationLock)
+    {
+      totalChars = _totalChars;
+    }
+    return totalChars == 0 ? Task.CompletedTask : Seek(charIndex / (double)totalChars);
+  }
 
-  public TypewriterProgressInfo GetProgress() =>
-    new(
-      Current: _currentCharCount,
-      Total: _totalChars,
-      Percent: _totalChars > 0 ? (_currentCharCount / (double)_totalChars) * 100 : 0,
-      Position: _totalChars > 0 ? _currentCharCount / (double)_totalChars : 0
-    );
+  public TypewriterProgressInfo GetProgress()
+  {
+    lock (_animationLock)
+    {
+      return new(
+        Current: _currentCharCount,
+        Total: _totalChars,
+        Percent: _totalChars > 0 ? (_currentCharCount / (double)_totalChars) * 100 : 0,
+        Position: _totalChars > 0 ? _currentCharCount / (double)_totalChars : 0
+      );
+    }
+  }
 }

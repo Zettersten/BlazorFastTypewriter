@@ -14,7 +14,10 @@ public partial class Typewriter
 
     try
     {
-      _isExtracting = true;
+      lock (_animationLock)
+      {
+        _isExtracting = true;
+      }
       await InvokeAsync(StateHasChanged).ConfigureAwait(false);
       await Task.Delay(150).ConfigureAwait(false);
 
@@ -29,9 +32,12 @@ public partial class Typewriter
 
       if (!elementReady)
       {
-        _operations = [];
-        _totalChars = 0;
-        _isExtracting = false;
+        lock (_animationLock)
+        {
+          _operations = [];
+          _totalChars = 0;
+          _isExtracting = false;
+        }
         return;
       }
 
@@ -41,25 +47,41 @@ public partial class Typewriter
 
       if (structure is not null)
       {
-        _operations = DomParsingService.ParseDomStructure(structure);
-        _totalChars = _operations.Count(static op => op.Type == OperationType.Char);
+        var operations = DomParsingService.ParseDomStructure(structure);
+        var totalChars = operations.Count(static op => op.Type == OperationType.Char);
+        lock (_animationLock)
+        {
+          _operations = operations;
+          _totalChars = totalChars;
+        }
       }
 
-      _isExtracting = false;
+      lock (_animationLock)
+      {
+        _isExtracting = false;
+      }
       await InvokeAsync(StateHasChanged).ConfigureAwait(false);
     }
     catch (Exception)
     {
-      _operations = [];
-      _totalChars = 0;
-      _isExtracting = false;
+      lock (_animationLock)
+      {
+        _operations = [];
+        _totalChars = 0;
+        _isExtracting = false;
+      }
     }
   }
 
   private async Task BuildDOMToIndex(int targetChar)
   {
-    _currentCharCount = 0;
-    _currentIndex = 0;
+    ImmutableArray<NodeOperation> operations;
+    lock (_animationLock)
+    {
+      operations = _operations;
+      _currentCharCount = 0;
+      _currentIndex = 0;
+    }
 
     if (targetChar <= 0)
     {
@@ -70,10 +92,11 @@ public partial class Typewriter
 
     var currentHtml = new StringBuilder(capacity: 1024);
     var charCount = 0;
+    int finalIndex = 0;
 
-    for (var i = 0; i < _operations.Length; i++)
+    for (var i = 0; i < operations.Length; i++)
     {
-      var op = _operations[i];
+      var op = operations[i];
 
       switch (op.Type)
       {
@@ -84,7 +107,7 @@ public partial class Typewriter
         case OperationType.Char:
           if (charCount >= targetChar)
           {
-            _currentIndex = i;
+            finalIndex = i;
             goto BuildComplete;
           }
           currentHtml.Append(op.Char);
@@ -96,11 +119,15 @@ public partial class Typewriter
           break;
       }
 
-      _currentIndex = i + 1;
+      finalIndex = i + 1;
     }
 
     BuildComplete:
-    _currentCharCount = charCount;
+    lock (_animationLock)
+    {
+      _currentIndex = finalIndex;
+      _currentCharCount = charCount;
+    }
 
     var html = currentHtml.ToString();
     await InvokeAsync(() =>
@@ -119,10 +146,21 @@ public partial class Typewriter
   )
   {
     var currentHtml = new StringBuilder(capacity: 1024);
+    ImmutableArray<NodeOperation> operations;
+    int startIndex;
 
-    for (var i = 0; i < _currentIndex; i++)
+    lock (_animationLock)
     {
-      var op = _operations[i];
+      operations = _operations;
+      startIndex = _currentIndex;
+    }
+
+    for (var i = 0; i < startIndex; i++)
+    {
+      if (i >= operations.Length)
+        break;
+
+      var op = operations[i];
       switch (op.Type)
       {
         case OperationType.OpenTag:
@@ -137,20 +175,31 @@ public partial class Typewriter
       }
     }
 
-    for (var i = _currentIndex; i < _operations.Length; i++)
+    for (var i = startIndex; i < operations.Length; i++)
     {
-      if (generation != _generation || !_isRunning || cancellationToken.IsCancellationRequested)
+      bool shouldContinue;
+      bool isPaused;
+      lock (_animationLock)
+      {
+        shouldContinue = generation == _generation && _isRunning && !cancellationToken.IsCancellationRequested;
+        isPaused = _isPaused;
+      }
+
+      if (!shouldContinue)
         return;
 
-      if (_isPaused)
+      if (isPaused)
       {
-        _currentIndex = i;
+        lock (_animationLock)
+        {
+          _currentIndex = i;
+        }
         await Task.Delay(100, cancellationToken).ConfigureAwait(false);
         i--;
         continue;
       }
 
-      var op = _operations[i];
+      var op = operations[i];
 
       switch (op.Type)
       {
@@ -160,7 +209,10 @@ public partial class Typewriter
 
         case OperationType.Char:
           currentHtml.Append(op.Char);
-          _currentCharCount++;
+          lock (_animationLock)
+          {
+            _currentCharCount++;
+          }
           break;
 
         case OperationType.CloseTag:
@@ -168,7 +220,12 @@ public partial class Typewriter
           break;
       }
 
-      _currentIndex = i + 1;
+      int currentCharCount;
+      lock (_animationLock)
+      {
+        _currentIndex = i + 1;
+        currentCharCount = _currentCharCount;
+      }
 
       var html = currentHtml.ToString();
       await InvokeAsync(() =>
@@ -178,14 +235,14 @@ public partial class Typewriter
         })
         .ConfigureAwait(false);
 
-      if (op.Type == OperationType.Char && _currentCharCount % 10 == 0 && totalChars > 0)
+      if (op.Type == OperationType.Char && currentCharCount % 10 == 0 && totalChars > 0)
       {
         await OnProgress
           .InvokeAsync(
             new TypewriterProgressEventArgs(
-              _currentCharCount,
+              currentCharCount,
               totalChars,
-              (_currentCharCount / (double)totalChars) * 100
+              (currentCharCount / (double)totalChars) * 100
             )
           )
           .ConfigureAwait(false);
@@ -201,8 +258,14 @@ public partial class Typewriter
       }
     }
 
-    _isRunning = false;
-    _currentCharCount = totalChars;
+    lock (_animationLock)
+    {
+      if (generation == _generation)
+      {
+        _isRunning = false;
+        _currentCharCount = totalChars;
+      }
+    }
 
     await OnProgress
       .InvokeAsync(new TypewriterProgressEventArgs(totalChars, totalChars, 100.0))

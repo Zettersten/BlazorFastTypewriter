@@ -80,9 +80,27 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
 
   private RenderFragment? CurrentContent { get; set; }
 
-  public bool IsRunning => _isRunning;
+  public bool IsRunning
+  {
+    get
+    {
+      lock (_animationLock)
+      {
+        return _isRunning;
+      }
+    }
+  }
 
-  public bool IsPaused => _isPaused;
+  public bool IsPaused
+  {
+    get
+    {
+      lock (_animationLock)
+      {
+        return _isPaused;
+      }
+    }
+  }
 
   private bool ShouldShowChildContent() => CurrentContent is null && (!Autostart || _isInitialized);
 
