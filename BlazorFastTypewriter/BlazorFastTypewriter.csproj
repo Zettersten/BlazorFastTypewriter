@@ -69,7 +69,8 @@
   </ItemGroup>
   
   <ItemGroup>
-    <!-- Include JavaScript file - Blazor automatically handles copying to _content folder -->
+    <!-- Include JavaScript file as static web asset for .NET 10 Blazor -->
+    <!-- For NuGet packages: Include in package for distribution -->
     <Content Include="Components\Typewriter.razor.js">
       <Pack>true</Pack>
       <PackagePath>contentFiles\any\any\_content\BlazorFastTypewriter\Components\</PackagePath>

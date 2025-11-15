@@ -24,13 +24,21 @@ public partial class Typewriter
       _isExtracting = true;
       await InvokeAsync(StateHasChanged).ConfigureAwait(false);
       
-      // Small delay to ensure Blazor has started rendering the extraction container
-      await Task.Delay(50).ConfigureAwait(false);
+      // Longer delay to ensure Blazor has fully rendered the extraction container
+      // Release builds may need more time due to AOT optimizations
+      await Task.Delay(150).ConfigureAwait(false);
 
       // Wait for the extraction container to be available in the DOM with content
       var elementReady = await _jsModule
-        .InvokeAsync<bool>("waitForElement", [$"{_containerId}-extract", 2000])
+        .InvokeAsync<bool>("waitForElement", [$"{_containerId}-extract", 3000])
         .ConfigureAwait(false);
+      
+      // Additional delay after element is found to ensure DOM is fully stable
+      // This is critical in Release builds where rendering timing may differ
+      if (elementReady)
+      {
+        await Task.Delay(100).ConfigureAwait(false);
+      }
 
       if (!elementReady)
       {
