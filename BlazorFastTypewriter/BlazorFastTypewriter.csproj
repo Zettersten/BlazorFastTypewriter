@@ -39,14 +39,14 @@
     <Deterministic>true</Deterministic>
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
     
-    <!-- Trimming & AOT Configuration -->
+    <!-- Trimming & AOT Configuration 
     <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
     <IsTrimmable>true</IsTrimmable>
     <PublishTrimmed>true</PublishTrimmed>
     <TrimMode>link</TrimMode>
     <RunAOTCompilation>true</RunAOTCompilation>
     <IlcOptimizationPreference>Speed</IlcOptimizationPreference>
-    <IlcInvariantGlobalization>true</IlcInvariantGlobalization>
+    <IlcInvariantGlobalization>true</IlcInvariantGlobalization> -->
     <InvariantGlobalization>true</InvariantGlobalization>
     
     <!-- Source Link for debugging NuGet packages -->
