@@ -7,8 +7,6 @@
     <RunAOTCompilation>false</RunAOTCompilation>
     <!-- Default base path for local development -->
     <BaseHref Condition="'$(BaseHref)' == ''">/</BaseHref>
-    <!-- Ensure static web assets are properly resolved -->
-    <StaticWebAssetBasePath Condition="'$(BaseHref)' != ''">$(BaseHref)</StaticWebAssetBasePath>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,55 +18,12 @@
     <ProjectReference Include="..\BlazorFastTypewriter\BlazorFastTypewriter.csproj" />
   </ItemGroup>
 
-  <!-- Remove duplicate Content items that are automatically included by the SDK -->
-  <!-- These files are in wwwroot and will be published automatically -->
-  <ItemGroup>
-    <Content Remove="wwwroot/.nojekyll" />
-    <Content Remove="wwwroot/404.html" />
-  </ItemGroup>
-
-  <!-- Replace BASE_HREF token in index.html and 404.html during build -->
+  <!-- Replace BASE_HREF token in index.html during build -->
   <Target Name="ReplaceBaseHref" AfterTargets="Publish">
     <PropertyGroup>
-      <IndexHtmlPath>$([System.IO.Path]::Combine('$(PublishDir)', 'wwwroot', 'index.html'))</IndexHtmlPath>
-      <NotFoundHtmlPath>$([System.IO.Path]::Combine('$(PublishDir)', 'wwwroot', '404.html'))</NotFoundHtmlPath>
+      <IndexHtmlPath>$(PublishDir)wwwroot\index.html</IndexHtmlPath>
     </PropertyGroup>
-    <!-- Only replace if file exists and BaseHref is different from default -->
-    <ReplaceFileText Condition="Exists('$(IndexHtmlPath)') And '$(BaseHref)' != '/'"
-                     InputFilename="$(IndexHtmlPath)" 
-                     OutputFilename="$(IndexHtmlPath)" 
-                     MatchExpression="&lt;base href=&quot;/&quot; /&gt;" 
-                     ReplacementText="&lt;base href=&quot;$(BaseHref)&quot; /&gt;" />
-    <ReplaceFileText Condition="Exists('$(NotFoundHtmlPath)') And '$(BaseHref)' != '/'"
-                     InputFilename="$(NotFoundHtmlPath)" 
-                     OutputFilename="$(NotFoundHtmlPath)" 
-                     MatchExpression="&lt;base href=&quot;/&quot; /&gt;" 
-                     ReplacementText="&lt;base href=&quot;$(BaseHref)&quot; /&gt;" />
-  </Target>
-
-  <!-- Ensure JavaScript files from referenced component library are copied during publish -->
-  <!-- In .NET 10, static web assets should be handled automatically, but we ensure they're copied -->
-  <!-- This target runs after publish to ensure JS files are in the output -->
-  <Target Name="CopyComponentLibraryJavaScript" AfterTargets="Publish">
-    <PropertyGroup>
-      <PublishWwwRootPath>$([System.IO.Path]::Combine('$(PublishDir)', 'wwwroot'))</PublishWwwRootPath>
-      <JsDestinationPath>$([System.IO.Path]::Combine('$(PublishWwwRootPath)', '_content', 'BlazorFastTypewriter', 'Components'))</JsDestinationPath>
-    </PropertyGroup>
-    <ItemGroup>
-      <JsFileToCopy Include="..\BlazorFastTypewriter\Components\Typewriter.razor.js" />
-    </ItemGroup>
-    <!-- Ensure destination directory exists -->
-    <MakeDir Directories="$(JsDestinationPath)" Condition="!Exists('$(JsDestinationPath)')" />
-    <!-- Copy JS file with error handling -->
-    <Copy SourceFiles="@(JsFileToCopy)" 
-          DestinationFolder="$(JsDestinationPath)" 
-          SkipUnchangedFiles="true" 
-          ContinueOnError="false">
-      <Output TaskParameter="CopiedFiles" ItemName="CopiedJsFiles" />
-    </Copy>
-    <!-- Log copied files for debugging (useful in CI/CD) -->
-    <Message Text="Copied JS file to: %(CopiedJsFiles.Identity)" Condition="'@(CopiedJsFiles)' != ''" Importance="normal" />
-    <Warning Text="Failed to copy Typewriter.razor.js - file may be missing!" Condition="'@(CopiedJsFiles)' == ''" />
+    <ReplaceFileText InputFilename="$(IndexHtmlPath)" OutputFilename="$(IndexHtmlPath)" MatchExpression="&lt;base href=&quot;/&quot; /&gt;" ReplacementText="&lt;base href=&quot;$(BaseHref)&quot; /&gt;" />
   </Target>
 
   <!-- Task to replace text in files -->
