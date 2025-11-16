@@ -20,6 +20,13 @@
     <ProjectReference Include="..\BlazorFastTypewriter\BlazorFastTypewriter.csproj" />
   </ItemGroup>
 
+  <!-- Remove duplicate Content items that are automatically included by the SDK -->
+  <!-- These files are in wwwroot and will be published automatically -->
+  <ItemGroup>
+    <Content Remove="wwwroot/.nojekyll" />
+    <Content Remove="wwwroot/404.html" />
+  </ItemGroup>
+
   <!-- Replace BASE_HREF token in index.html and 404.html during build -->
   <Target Name="ReplaceBaseHref" AfterTargets="Publish">
     <PropertyGroup>
