@@ -1,8 +1,3 @@
-using System.Collections.Immutable;
-using BlazorFastTypewriter.Services;
-using Microsoft.AspNetCore.Components;
-using Microsoft.JSInterop;
-
 namespace BlazorFastTypewriter;
 
 /// <summary>

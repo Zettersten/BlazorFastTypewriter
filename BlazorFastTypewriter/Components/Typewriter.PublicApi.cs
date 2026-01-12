@@ -1,7 +1,3 @@
-using System.Collections.Immutable;
-using BlazorFastTypewriter.Services;
-using Microsoft.AspNetCore.Components;
-
 namespace BlazorFastTypewriter;
 
 public partial class Typewriter
