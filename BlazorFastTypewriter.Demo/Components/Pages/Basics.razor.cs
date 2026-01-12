@@ -24,6 +24,10 @@ public partial class Basics
   private bool _rtlRunning;
   private bool _rtlPaused;
   private TypewriterProgressInfo? _rtlProgress;
+
+  private Typewriter? _batchTypewriter;
+  private bool _batchRunning;
+  private int _renderBatchSize = 5;
   private void HandleBasicComplete()
   {
     _basicRunning = false;
@@ -68,14 +72,6 @@ public partial class Basics
       await _basicTypewriter.Reset();
       _basicRunning = false;
       _basicPaused = false;
-    }
-  }
-
-  private void HandleSpeedChange(ChangeEventArgs e)
-  {
-    if (int.TryParse(e.Value?.ToString(), out var newSpeed))
-    {
-      _speed = newSpeed;
     }
   }
 
@@ -268,5 +264,37 @@ public partial class Basics
   {
     _speed = newSpeed;
     StateHasChanged();
+  }
+
+  private async Task StartBatch()
+  {
+    if (_batchTypewriter is null)
+      return;
+
+    _batchRunning = true;
+    await _batchTypewriter.Start();
+  }
+
+  private async Task ResetBatch()
+  {
+    if (_batchTypewriter is null)
+      return;
+
+    _batchRunning = false;
+    await _batchTypewriter.Reset();
+  }
+
+  private void HandleBatchComplete()
+  {
+    _batchRunning = false;
+    StateHasChanged();
+  }
+
+  private void HandleRenderBatchSizeInput(ChangeEventArgs e)
+  {
+    if (int.TryParse(e.Value?.ToString(), out var value))
+    {
+      _renderBatchSize = Math.Clamp(value, 1, 20);
+    }
   }
 }

@@ -1,5 +1,3 @@
-using Microsoft.AspNetCore.Components;
-
 namespace BlazorFastTypewriter.Demo.Components.Pages;
 
 public partial class SeekDemo
@@ -7,25 +5,7 @@ public partial class SeekDemo
   private Typewriter? _seekTypewriter;
   private bool _seekRunning;
   private bool _seekPaused;
-  private double _seekPercent;
   private TypewriterProgressInfo? _seekInfo;
-
-  private async Task HandleSeekInput(ChangeEventArgs e)
-  {
-    if (double.TryParse(e.Value?.ToString(), out var value))
-    {
-      _seekPercent = value;
-    }
-  }
-
-  private async Task HandleSeekChange(ChangeEventArgs e)
-  {
-    if (double.TryParse(e.Value?.ToString(), out var value) && _seekTypewriter is not null)
-    {
-      _seekPercent = value;
-      await _seekTypewriter.SeekToPercent(value);
-    }
-  }
 
   private async Task SeekToPosition(double position)
   {
@@ -37,7 +17,6 @@ public partial class SeekDemo
 
   private void HandleSeek(TypewriterSeekEventArgs args)
   {
-    _seekPercent = args.Percent;
     _seekInfo = new TypewriterProgressInfo(
       args.TargetChar,
       args.TotalChars,
@@ -66,7 +45,6 @@ public partial class SeekDemo
 
   private void HandleSeekProgress(TypewriterProgressEventArgs args)
   {
-    _seekPercent = args.Percent;
     _seekInfo = new TypewriterProgressInfo(
       args.Current,
       args.Total,
@@ -80,24 +58,7 @@ public partial class SeekDemo
   {
     _seekRunning = false;
     _seekPaused = false;
-    _seekPercent = 100;
     StateHasChanged();
-  }
-
-  private async Task HandlePlayPause()
-  {
-    if (_seekPaused)
-    {
-      await ResumeSeek();
-    }
-    else if (!_seekRunning)
-    {
-      await StartSeek();
-    }
-    else
-    {
-      await PauseSeek();
-    }
   }
 
   private async Task HandleSeekFromControls(double percent)
@@ -143,7 +104,6 @@ public partial class SeekDemo
       await _seekTypewriter.Reset();
       _seekRunning = false;
       _seekPaused = false;
-      _seekPercent = 0;
       _seekInfo = null;
     }
   }
