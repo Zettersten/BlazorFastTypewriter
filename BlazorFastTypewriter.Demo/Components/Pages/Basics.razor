@@ -49,6 +49,51 @@
 </section>
 
 <section class="demo-section">
+    <h2>Performance: Render Batching</h2>
+    <p>
+        For long content, set <code>RenderBatchSize</code> to render every N characters instead of every character.
+        This reduces allocations and render overhead (at the cost of less granular updates).
+    </p>
+    
+    <div class="player-container">
+        <div class="demo-preview">
+            <Typewriter @ref="_batchTypewriter"
+                        Autostart="false"
+                        Speed="120"
+                        MinDuration="0"
+                        RenderBatchSize="@_renderBatchSize"
+                        OnComplete="HandleBatchComplete">
+                <p>
+                    This demo types a longer message to make the difference visible. Increase <code>RenderBatchSize</code>
+                    to reduce UI updates and improve throughput when animating large HTML payloads.
+                </p>
+            </Typewriter>
+        </div>
+        
+        <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+            <button @onclick="StartBatch" disabled="@_batchRunning">Start</button>
+            <button @onclick="ResetBatch">Reset</button>
+            
+            <label style="display: inline-flex; gap: 0.5rem; align-items: center;">
+                <span><strong>RenderBatchSize</strong>: @_renderBatchSize</span>
+                <input type="range"
+                       min="1"
+                       max="20"
+                       step="1"
+                       value="@_renderBatchSize"
+                       @oninput="HandleRenderBatchSizeInput" />
+            </label>
+        </div>
+    </div>
+
+    <CodeSample>
+        <pre><code class="language-xml">&lt;Typewriter RenderBatchSize="10" Speed="120"&gt;
+    &lt;p&gt;Longer content...&lt;/p&gt;
+&lt;/Typewriter&gt;</code></pre>
+    </CodeSample>
+</section>
+
+<section class="demo-section">
     <h2>Speed Control</h2>
     <p>Control the typing speed using the <code>Speed</code> parameter (characters per second). Adjust the slider to see different speeds.</p>
     

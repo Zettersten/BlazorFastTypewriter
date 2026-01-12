@@ -1,7 +1,4 @@
-using System.Collections.Immutable;
 using System.Text;
-using BlazorFastTypewriter.Services;
-using Microsoft.AspNetCore.Components;
 
 namespace BlazorFastTypewriter;
 
@@ -19,16 +16,10 @@ public partial class Typewriter
         _isExtracting = true;
       }
       await InvokeAsync(StateHasChanged).ConfigureAwait(false);
-      await Task.Delay(150).ConfigureAwait(false);
 
       var elementReady = await _jsModule
         .InvokeAsync<bool>("waitForElement", [$"{_containerId}-extract", 3000])
         .ConfigureAwait(false);
-      
-      if (elementReady)
-      {
-        await Task.Delay(100).ConfigureAwait(false);
-      }
 
       if (!elementReady)
       {
@@ -48,7 +39,7 @@ public partial class Typewriter
       if (structure is not null)
       {
         var operations = DomParsingService.ParseDomStructure(structure);
-        var totalChars = operations.Count(static op => op.Type == OperationType.Char);
+        var totalChars = CountChars(operations);
         lock (_animationLock)
         {
           _operations = operations;
@@ -85,7 +76,8 @@ public partial class Typewriter
 
     if (targetChar <= 0)
     {
-      CurrentContent = static builder => { };
+      _currentHtml = string.Empty;
+      CurrentContent = EmptyFragment;
       await InvokeAsync(StateHasChanged).ConfigureAwait(false);
       return;
     }
@@ -129,13 +121,8 @@ public partial class Typewriter
       _currentCharCount = charCount;
     }
 
-    var html = currentHtml.ToString();
-    await InvokeAsync(() =>
-      {
-        CurrentContent = builder => builder.AddMarkupContent(0, html);
-        StateHasChanged();
-      })
-      .ConfigureAwait(false);
+    _currentHtml = currentHtml.ToString();
+    await InvokeAsync(ShowCurrentHtml).ConfigureAwait(false);
   }
 
   private async Task AnimateAsync(
@@ -148,11 +135,13 @@ public partial class Typewriter
     var currentHtml = new StringBuilder(capacity: 1024);
     ImmutableArray<NodeOperation> operations;
     int startIndex;
+    int currentCharCount;
 
     lock (_animationLock)
     {
       operations = _operations;
       startIndex = _currentIndex;
+      currentCharCount = _currentCharCount;
     }
 
     for (var i = 0; i < startIndex; i++)
@@ -174,6 +163,9 @@ public partial class Typewriter
           break;
       }
     }
+
+    var startCharCount = currentCharCount;
+    var batchSize = EffectiveRenderBatchSize;
 
     for (var i = startIndex; i < operations.Length; i++)
     {
@@ -209,10 +201,7 @@ public partial class Typewriter
 
         case OperationType.Char:
           currentHtml.Append(op.Char);
-          lock (_animationLock)
-          {
-            _currentCharCount++;
-          }
+          currentCharCount++;
           break;
 
         case OperationType.CloseTag:
@@ -220,20 +209,22 @@ public partial class Typewriter
           break;
       }
 
-      int currentCharCount;
       lock (_animationLock)
       {
         _currentIndex = i + 1;
-        currentCharCount = _currentCharCount;
+        _currentCharCount = currentCharCount;
       }
 
-      var html = currentHtml.ToString();
-      await InvokeAsync(() =>
+      if (op.Type == OperationType.Char)
+      {
+        var typedThisRun = currentCharCount - startCharCount;
+        var shouldRender = typedThisRun == 1 || (typedThisRun % batchSize == 0) || i == operations.Length - 1;
+        if (shouldRender)
         {
-          CurrentContent = builder => builder.AddMarkupContent(0, html);
-          StateHasChanged();
-        })
-        .ConfigureAwait(false);
+          _currentHtml = currentHtml.ToString();
+          await InvokeAsync(ShowCurrentHtml).ConfigureAwait(false);
+        }
+      }
 
       if (op.Type == OperationType.Char && currentCharCount % 10 == 0 && totalChars > 0)
       {
@@ -271,12 +262,7 @@ public partial class Typewriter
       .InvokeAsync(new TypewriterProgressEventArgs(totalChars, totalChars, 100.0))
       .ConfigureAwait(false);
 
-    await InvokeAsync(() =>
-      {
-        CurrentContent = _originalContent;
-        StateHasChanged();
-      })
-      .ConfigureAwait(false);
+    await InvokeAsync(ShowOriginalContent).ConfigureAwait(false);
     await OnComplete.InvokeAsync().ConfigureAwait(false);
   }
 }

@@ -159,6 +159,7 @@ That's it! CSS and JavaScript are automatically included via Blazor's static web
 |:----------|:-----|:--------|:------------|
 | `ChildContent` | `RenderFragment?` | `null` | Content to animate. Supports any HTML markup. |
 | `Speed` | `int` | `100` | Typing speed in characters per second. |
+| `RenderBatchSize` | `int` | `1` | Render every N characters. Increase to reduce allocations/render overhead for long content. |
 | `MinDuration` | `int` | `100` | Minimum animation duration in milliseconds. |
 | `MaxDuration` | `int` | `30000` | Maximum animation duration in milliseconds. |
 | `Autostart` | `bool` | `true` | Auto-start animation on load. Set to `false` for manual control. |
@@ -270,6 +271,8 @@ Jump to any position in the animation with full scrubbing support:
 
 Update content programmatically at runtime:
 
+> **Security note:** `SetText(string html)` renders raw markup (via `AddMarkupContent`). Only pass **trusted** HTML, or sanitize it first if it can contain user input.
+
 ```razor
 <Typewriter @ref="_typewriter" Autostart="false">
     @_content
@@ -368,11 +371,10 @@ dotnet publish -c Release \
 
 ## Testing
 
-The project includes comprehensive BUnit tests covering:
-- Component rendering and lifecycle
-- Playback control methods
-- Event callbacks and parameter forwarding
-- Edge cases and error handling
+The project includes a small bUnit test suite covering:
+- Basic rendering behavior (e.g., `dir` attribute)
+- DOM extraction happy path and completion callback
+- Seek rendering behavior
 
 Run tests locally:
 

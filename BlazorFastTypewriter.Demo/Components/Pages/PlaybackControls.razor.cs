@@ -103,22 +103,6 @@ public partial class PlaybackControls
     StateHasChanged();
   }
 
-  private async Task HandlePlayPause()
-  {
-    if (_controlPaused)
-    {
-      await ResumeControl();
-    }
-    else if (!_controlRunning)
-    {
-      await StartControl();
-    }
-    else
-    {
-      await PauseControl();
-    }
-  }
-
   // Progress handlers
   private void HandleProgress(TypewriterProgressEventArgs args)
   {

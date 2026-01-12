@@ -8,19 +8,6 @@ public partial class Home
   private bool _basicPaused;
   private TypewriterProgressInfo? _basicProgress;
 
-  private void HandleHeroComplete()
-  {
-    _ = Task.Run(async () =>
-    {
-      await Task.Delay(3000);
-      if (_heroTypewriter is not null)
-      {
-        await _heroTypewriter.Reset();
-        await _heroTypewriter.Start();
-      }
-    });
-  }
-
   private void HandleBasicComplete()
   {
     _basicRunning = false;

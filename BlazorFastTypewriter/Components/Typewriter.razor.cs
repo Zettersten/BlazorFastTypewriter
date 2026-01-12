@@ -1,8 +1,3 @@
-using System.Collections.Immutable;
-using BlazorFastTypewriter.Services;
-using Microsoft.AspNetCore.Components;
-using Microsoft.JSInterop;
-
 namespace BlazorFastTypewriter;
 
 /// <summary>
@@ -19,6 +14,9 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
   private int _currentCharCount;
   private ImmutableArray<NodeOperation> _operations = [];
   private RenderFragment? _originalContent;
+  private string _currentHtml = string.Empty;
+  private readonly RenderFragment _currentHtmlFragment;
+  private static readonly RenderFragment EmptyFragment = static _ => { };
   private CancellationTokenSource? _cancellationTokenSource;
   private ElementReference _containerRef;
   private IJSObjectReference? _jsModule;
@@ -26,6 +24,11 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
   private bool _isInitialized;
   private readonly string _containerId = Guid.CreateVersion7().ToString("N")[..8];
   private readonly Lock _animationLock = new();
+
+  public Typewriter()
+  {
+    _currentHtmlFragment = builder => builder.AddMarkupContent(0, _currentHtml);
+  }
 
   [Inject]
   private IJSRuntime JSRuntime { get; set; } = null!;
@@ -38,6 +41,12 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
 
   [Parameter]
   public int Speed { get; set; } = 100;
+
+  /// <summary>
+  /// Number of characters to type between UI renders. Higher values reduce allocations and render overhead.
+  /// </summary>
+  [Parameter]
+  public int RenderBatchSize { get; set; } = 1;
 
   [Parameter]
   public int MinDuration { get; set; } = 100;
@@ -79,6 +88,9 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
   public EventCallback<TypewriterSeekEventArgs> OnSeek { get; set; }
 
   private RenderFragment? CurrentContent { get; set; }
+
+  private int EffectiveRenderBatchSize => RenderBatchSize < 1 ? 1 : RenderBatchSize;
+  private int EffectiveSpeed => Speed < 1 ? 1 : Speed;
 
   public bool IsRunning
   {
@@ -157,7 +169,6 @@ public partial class Typewriter : ComponentBase, IAsyncDisposable
 
       if (Autostart && ChildContent is not null)
       {
-        await Task.Delay(100).ConfigureAwait(false);
         await Start().ConfigureAwait(false);
       }
     }
